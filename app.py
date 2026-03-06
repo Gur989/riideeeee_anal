@@ -31,7 +31,7 @@ if not st.session_state.login:
 
 @st.cache_data
 def load_data():
-    df = pd.read_csv("rides_data.csv")
+    df = pd.read_csv("new_rider_share10.csv")
     return df
 
 df = load_data()
@@ -151,5 +151,6 @@ elif page == "Predictive Modelling":
                    x="hour",
                    y="price",
                    title="Actual Price by Hour")
+
 
     col2.plotly_chart(fig8, use_container_width=True)
