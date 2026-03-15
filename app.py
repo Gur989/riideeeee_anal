@@ -134,12 +134,18 @@ if page == "Timing Based Pricing":
 
     col1,col2,col3,col4 = st.columns(4)
 
-    col1.metric("Total Rides", len(df))
-    col2.metric("Average Price", round(df["price"].mean(),2))
-    col3.metric("Peak Hour", df["hour"].value_counts().idxmax())
-    col4.metric("Average Distance", round(df["distance"].mean(),2))
+    total_rides = len(df)
+    avg_price = round(df["price"].mean(),2)
 
-    col1,col2 = st.columns(2)
+    # Correct Peak Hour Calculation
+    peak_hour = df.groupby("hour").size().idxmax()
+
+    avg_distance = round(df["distance"].mean(),2)
+
+    col1.metric("Total Rides", total_rides)
+    col2.metric("Average Price", avg_price)
+    col3.metric("Peak Hour", peak_hour)
+    col4.metric("Average Distance", avg_distance)
 
     fig1 = px.line(
         df.groupby("hour")["price"].mean().reset_index(),
