@@ -11,42 +11,55 @@ st.set_page_config(page_title="Ride Analytics Dashboard", layout="wide")
 st.markdown("""
 <style>
 
-/* Sidebar background */
+/* Main dashboard background */
+.main {
+    background-color:#F5F7FA;
+}
+
+/* Sidebar background (lighter blue) */
 section[data-testid="stSidebar"] {
-    background-color:#1F2A44;
+    background-color:#2E3B55;
 }
 
 /* Sidebar titles */
 section[data-testid="stSidebar"] h1,
 section[data-testid="stSidebar"] h2,
-section[data-testid="stSidebar"] h3{
+section[data-testid="stSidebar"] h3 {
     color:white;
 }
 
-/* Sidebar navigation text (radio buttons) */
-section[data-testid="stSidebar"] .stRadio label{
+/* Navigation radio buttons */
+section[data-testid="stSidebar"] .stRadio label {
+    color:white !important;
+    font-size:16px;
+}
+
+/* Filter labels */
+section[data-testid="stSidebar"] label {
     color:white !important;
 }
 
-/* Sidebar filter labels */
-section[data-testid="stSidebar"] label{
+/* Multiselect labels */
+section[data-testid="stSidebar"] .stMultiSelect label {
     color:white !important;
 }
 
-/* Multiselect text */
-section[data-testid="stSidebar"] .stMultiSelect label{
+/* Selectbox labels */
+section[data-testid="stSidebar"] .stSelectbox label {
     color:white !important;
 }
 
-/* Sidebar selectbox text */
-section[data-testid="stSidebar"] .stSelectbox label{
-    color:white !important;
+/* KPI cards */
+div[data-testid="metric-container"] {
+    background-color:white;
+    border-radius:12px;
+    padding:15px;
+    box-shadow:0px 4px 10px rgba(0,0,0,0.08);
 }
 
 </style>
 """, unsafe_allow_html=True)
-
-# ---------------- LOGIN SYSTEM ----------------
+---------------- LOGIN SYSTEM ----------------
 
 if "login" not in st.session_state:
     st.session_state.login = False
