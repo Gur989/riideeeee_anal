@@ -136,7 +136,7 @@ if page == "Timing Based Pricing":
 
     col1.metric("Total Rides", len(df))
     col2.metric("Average Price", round(df["price"].mean(),2))
-    col3.metric("Peak Hour", df["hour"].mode()[0])
+    col3.metric("Peak Hour", df["hour"].value_counts().idxmax())
     col4.metric("Average Distance", round(df["distance"].mean(),2))
 
     col1,col2 = st.columns(2)
