@@ -8,31 +8,71 @@ st.set_page_config(page_title="Ride Analytics Dashboard", layout="wide")
 
 # ---------------- STYLE ----------------
 
-st.markdown(
-    """
-    <style>
-    .main {
-        background-color:#F5F7FA;
-    }
+st.markdown("""
+<style>
 
-    h1,h2,h3{
-        color:#2C3E50;
-    }
+/* Main dashboard background */
+.main {
+    background-color:#F5F7FA;
+}
 
-    div[data-testid="metric-container"]{
-        background-color:white;
-        border-radius:12px;
-        padding:15px;
-        box-shadow:0 2px 6px rgba(0,0,0,0.1);
-    }
+/* Titles */
+h1, h2, h3 {
+    color:#2C3E50;
+}
 
-    section[data-testid="stSidebar"]{
-        background-color:#1F2A44;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+/* KPI cards */
+div[data-testid="metric-container"] {
+    background-color:white;
+    border-radius:12px;
+    padding:15px;
+    box-shadow:0px 4px 10px rgba(0,0,0,0.08);
+}
+
+/* Sidebar background */
+section[data-testid="stSidebar"] {
+    background-color:#1F2A44;
+}
+
+/* Sidebar title */
+section[data-testid="stSidebar"] h1 {
+    color:white;
+}
+
+/* Sidebar text */
+section[data-testid="stSidebar"] label {
+    color:white !important;
+}
+
+/* Radio button text */
+section[data-testid="stSidebar"] .stRadio label {
+    color:white !important;
+}
+
+/* Filter labels */
+section[data-testid="stSidebar"] .stMultiSelect label {
+    color:white !important;
+}
+
+/* Sidebar section titles */
+section[data-testid="stSidebar"] h2,
+section[data-testid="stSidebar"] h3 {
+    color:#F1F1F1;
+}
+
+/* Sidebar navigation spacing */
+section[data-testid="stSidebar"] .stRadio {
+    margin-bottom:20px;
+}
+
+/* Button style */
+button[kind="primary"] {
+    background-color:#2E86DE;
+    border-radius:8px;
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 # ---------------- LOGIN SYSTEM ----------------
 
