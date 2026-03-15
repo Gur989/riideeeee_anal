@@ -8,30 +8,31 @@ st.set_page_config(page_title="Ride Analytics Dashboard", layout="wide")
 
 # ---------------- STYLE ----------------
 
-st.markdown("""
-<style>
+st.markdown(
+    """
+    <style>
+    .main {
+        background-color:#F5F7FA;
+    }
 
-.main {
-    background-color:#F5F7FA;
-}
+    h1,h2,h3{
+        color:#2C3E50;
+    }
 
-h1,h2,h3{
-    color:#2C3E50;
-}
+    div[data-testid="metric-container"]{
+        background-color:white;
+        border-radius:12px;
+        padding:15px;
+        box-shadow:0 2px 6px rgba(0,0,0,0.1);
+    }
 
-div[data-testid="metric-container"]{
-    background-color:white;
-    border-radius:12px;
-    padding:15px;
-    box-shadow:0 2px 6px rgba(0,0,0,0.1);
-}
-
-.sidebar .sidebar-content{
-    background-color:#1F2A44;
-}
-
-</style>
-""", unsafe_allow_html=True)
+    section[data-testid="stSidebar"]{
+        background-color:#1F2A44;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # ---------------- LOGIN SYSTEM ----------------
 
@@ -298,3 +299,4 @@ elif page == "Ride Price Prediction":
         col2.metric("Prediction Confidence",f"{success_probability}%")
 
         st.success("Prediction Generated Successfully")
+
