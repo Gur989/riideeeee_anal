@@ -93,14 +93,16 @@ if not st.session_state.login:
 # ---------------- LOAD DATA ----------------
 
 
+
 @st.cache_data
 def load_data():
 
     df = pd.read_csv("new_rider_share10.csv")
+
+    # Remove extra spaces from weather column
+    df["short_summary"] = df["short_summary"].str.strip()
+
     return df
-
-
-df = load_data()
 
 # ---------------- SIDEBAR ----------------
 
@@ -165,21 +167,26 @@ elif page == "Weather Impact":
 
     st.title("Weather Impact On Pricing")
 
+    # Create filtered weather data
+    clear_df = df[df["short_summary"] == "Clear"]
+    rain_df = df[df["short_summary"].str.contains("Rain", case=False)]
+    fog_df = df[df["short_summary"].str.contains("Fog", case=False)]
+
     col1,col2,col3,col4,col5 = st.columns(5)
 
     col1.metric(
         "Avg Price Clear",
-        round(df[df["short_summary"]=="Clear"]["price"].mean(),2)
+        round(clear_df["price"].mean(),2)
     )
 
     col2.metric(
         "Avg Price Rain",
-        round(df[df["short_summary"].str.contains("Rain")]["price"].mean(),2)
+        round(rain_df["price"].mean(),2)
     )
 
     col3.metric(
         "Avg Price Fog",
-        round(df[df["short_summary"].str.contains("Fog")]["price"].mean(),2)
+        round(fog_df["price"].mean(),2)
     )
 
     col4.metric(
@@ -189,24 +196,27 @@ elif page == "Weather Impact":
 
     col5.metric(
         "Surge in Rain",
-        round(df[df["short_summary"].str.contains("Rain")]["surge_multiplier"].mean(),2)
+        round(rain_df["surge_multiplier"].mean(),2)
     )
 
     st.divider()
 
     col1,col2 = st.columns(2)
 
+    # Average price by weather
     weather_price = df.groupby("short_summary")["price"].mean().reset_index()
 
     fig1 = px.bar(
         weather_price,
         x="short_summary",
         y="price",
-        title="Average Price by Weather"
+        title="Average Price by Weather",
+        color="price"
     )
 
-    col1.plotly_chart(fig1,use_container_width=True)
+    col1.plotly_chart(fig1, use_container_width=True)
 
+    # Price vs temperature
     fig2 = px.scatter(
         df,
         x="temperature",
@@ -214,9 +224,8 @@ elif page == "Weather Impact":
         title="Price vs Temperature"
     )
 
-    col2.plotly_chart(fig2,use_container_width=True)
-
-# ---------------- PAGE 3 ----------------
+    col2.plotly_chart(fig2, use_container_width=True)
+    # ---------------- PAGE 3 ----------------
 
 elif page == "Surge Pricing":
 
