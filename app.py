@@ -18,7 +18,7 @@ st.markdown("""
 
 /* Titles */
 h1, h2, h3 {
-    color:#2C3E50;
+    color:white;
 }
 
 /* KPI cards */
@@ -57,7 +57,7 @@ section[data-testid="stSidebar"] .stMultiSelect label {
 /* Sidebar section titles */
 section[data-testid="stSidebar"] h2,
 section[data-testid="stSidebar"] h3 {
-    color:#F1F1F1;
+    color:white;
 }
 
 /* Sidebar navigation spacing */
