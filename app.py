@@ -67,7 +67,7 @@ section[data-testid="stSidebar"] .stRadio {
 
 /* Button style */
 button[kind="primary"] {
-    background-color:#2E86DE;
+    background-color:white;
     border-radius:8px;
 }
 
