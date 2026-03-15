@@ -11,50 +11,55 @@ st.set_page_config(page_title="Ride Analytics Dashboard", layout="wide")
 st.markdown("""
 <style>
 
-/* Main dashboard background */
+/* Main dashboard background (dark off-white) */
 .main {
-    background-color:#F5F7FA;
+    background-color:#F0F2F6;
 }
 
-/* Sidebar background (lighter blue) */
+/* Page titles */
+h1, h2, h3 {
+    color:#000000;
+}
+
+/* KPI cards */
+div[data-testid="metric-container"] {
+    background-color:#FFFFFF;
+    border-radius:12px;
+    padding:15px;
+    box-shadow:0px 4px 10px rgba(0,0,0,0.08);
+}
+
+/* Sidebar background */
 section[data-testid="stSidebar"] {
-    background-color:#2E3B55;
+    background-color:#E9ECEF;
 }
 
 /* Sidebar titles */
 section[data-testid="stSidebar"] h1,
 section[data-testid="stSidebar"] h2,
 section[data-testid="stSidebar"] h3 {
-    color:white;
+    color:black;
 }
 
-/* Navigation radio buttons */
+/* Sidebar navigation text */
 section[data-testid="stSidebar"] .stRadio label {
-    color:white !important;
+    color:black !important;
     font-size:16px;
 }
 
 /* Filter labels */
 section[data-testid="stSidebar"] label {
-    color:white !important;
+    color:black !important;
 }
 
-/* Multiselect labels */
+/* Multiselect */
 section[data-testid="stSidebar"] .stMultiSelect label {
-    color:white !important;
+    color:black !important;
 }
 
-/* Selectbox labels */
+/* Selectbox */
 section[data-testid="stSidebar"] .stSelectbox label {
-    color:white !important;
-}
-
-/* KPI cards */
-div[data-testid="metric-container"] {
-    background-color:white;
-    border-radius:12px;
-    padding:15px;
-    box-shadow:0px 4px 10px rgba(0,0,0,0.08);
+    color:black !important;
 }
 
 </style>
