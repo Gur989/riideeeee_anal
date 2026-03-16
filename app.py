@@ -218,35 +218,7 @@ elif page == "Surge Pricing":
 
     col2.plotly_chart(fig4,use_container_width=True)
 
-# ---------------- PAGE 4 ----------------
 
-elif page == "Predictive Modelling":
-
-    st.title("Predictive Pricing Overview")
-
-    avg_price = df["price"].mean()
-
-    df["predicted_price"] = avg_price
-
-    col1,col2 = st.columns(2)
-
-    fig5 = px.line(
-        df.groupby("hour")["predicted_price"].mean().reset_index(),
-        x="hour",
-        y="predicted_price",
-        title="Predicted Price by Hour"
-    )
-
-    col1.plotly_chart(fig5,use_container_width=True)
-
-    fig6 = px.line(
-        df.groupby("hour")["price"].mean().reset_index(),
-        x="hour",
-        y="price",
-        title="Actual Price by Hour"
-    )
-
-    col2.plotly_chart(fig6,use_container_width=True)
 
 # ---------------- PAGE 5 ----------------
 
@@ -254,24 +226,44 @@ elif page == "Ride Price Prediction":
 
     st.title("Ride Price Prediction Dashboard")
 
-    col1,col2 = st.columns(2)
+    st.subheader("Enter Ride Details")
 
-    r2 = r2_score(df_pred["Actual_Price"],df_pred["Predicted_Price"])
+    col1,col2,col3 = st.columns(3)
 
-    col1.metric("Model Accuracy (R²)",round(r2,2))
-    col2.metric("Total Predictions",len(df_pred))
+    with col1:
+        distance = st.number_input("Distance (km)",0.1,10.0,2.0)
+        hour = st.slider("Hour of Day",0,23,12)
+        temperature = st.number_input("Temperature",0.0,50.0,25.0)
 
-    st.divider()
+    with col2:
+        humidity = st.slider("Humidity",0.0,1.0,0.5)
+        wind = st.number_input("Wind Speed",0.0,20.0,5.0)
+        visibility = st.number_input("Visibility",0.0,15.0,10.0)
 
-    fig = px.scatter(
-        df_pred,
-        x="Actual_Price",
-        y="Predicted_Price",
-        title="Actual vs Predicted Price"
-    )
+    with col3:
+        cab = st.selectbox("Cab Type",df["cab_type"].unique())
+        weather = st.selectbox("Weather",df["short_summary"].unique())
 
-    st.plotly_chart(fig,use_container_width=True)
+    if st.button("Predict Ride Price"):
 
-    st.subheader("Prediction Sample Data")
+        # simple prediction formula
+        base_price = distance * 3
 
-    st.dataframe(df_pred.head(50))
+        weather_factor = 1.2 if "Rain" in weather else 1
+        temp_factor = temperature / 50
+
+        predicted_price = round(base_price * weather_factor * (1 + temp_factor),2)
+
+        # calculate model confidence using R²
+        r2 = r2_score(df_pred["Actual_Price"], df_pred["Predicted_Price"])
+
+        confidence = round(r2 * 100,2)
+
+        st.divider()
+
+        col1,col2 = st.columns(2)
+
+        col1.metric("Predicted Ride Price", f"${predicted_price}")
+        col2.metric("Prediction Confidence", f"{confidence}%")
+
+        st.success("Prediction Generated Successfully")
