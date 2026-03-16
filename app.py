@@ -3,6 +3,8 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import zipfile
+from sklearn.metrics import r2_score
 
 st.set_page_config(page_title="Ride Analytics Dashboard", layout="wide")
 
@@ -10,61 +12,30 @@ st.set_page_config(page_title="Ride Analytics Dashboard", layout="wide")
 
 st.markdown("""
 <style>
+.main {background-color:#F0F2F6;}
 
-/* Main dashboard background (dark off-white) */
-.main {
-    background-color:#F0F2F6;
+h1,h2,h3{
+color:#000000;
 }
 
-/* Page titles */
-h1, h2, h3 {
-    color:#000000;
+div[data-testid="metric-container"]{
+background-color:#FFFFFF;
+border-radius:12px;
+padding:15px;
+box-shadow:0px 4px 10px rgba(0,0,0,0.08);
 }
 
-/* KPI cards */
-div[data-testid="metric-container"] {
-    background-color:#FFFFFF;
-    border-radius:12px;
-    padding:15px;
-    box-shadow:0px 4px 10px rgba(0,0,0,0.08);
+section[data-testid="stSidebar"]{
+background-color:#E9ECEF;
 }
 
-/* Sidebar background */
-section[data-testid="stSidebar"] {
-    background-color:#E9ECEF;
+section[data-testid="stSidebar"] label{
+color:black !important;
 }
-
-/* Sidebar titles */
-section[data-testid="stSidebar"] h1,
-section[data-testid="stSidebar"] h2,
-section[data-testid="stSidebar"] h3 {
-    color:black;
-}
-
-/* Sidebar navigation text */
-section[data-testid="stSidebar"] .stRadio label {
-    color:black !important;
-    font-size:16px;
-}
-
-/* Filter labels */
-section[data-testid="stSidebar"] label {
-    color:black !important;
-}
-
-/* Multiselect */
-section[data-testid="stSidebar"] .stMultiSelect label {
-    color:black !important;
-}
-
-/* Selectbox */
-section[data-testid="stSidebar"] .stSelectbox label {
-    color:black !important;
-}
-
 </style>
 """, unsafe_allow_html=True)
-#---------------- LOGIN SYSTEM ----------------
+
+# ---------------- LOGIN SYSTEM ----------------
 
 if "login" not in st.session_state:
     st.session_state.login = False
@@ -92,15 +63,28 @@ if not st.session_state.login:
 
 # ---------------- LOAD DATA ----------------
 
-
 @st.cache_data
 def load_data():
 
     df = pd.read_csv("new_rider_share10.csv")
+
+    df["short_summary"] = df["short_summary"].str.strip()
+
     return df
 
 
+@st.cache_data
+def load_prediction_data():
+
+    with zipfile.ZipFile("predictive_model_data.zip") as z:
+        with z.open(z.namelist()[0]) as f:
+            df_pred = pd.read_csv(f)
+
+    return df_pred
+
+
 df = load_data()
+df_pred = load_prediction_data()
 
 # ---------------- SIDEBAR ----------------
 
@@ -136,7 +120,7 @@ if page == "Timing Based Pricing":
 
     col1.metric("Total Rides", len(df))
     col2.metric("Average Price", round(df["price"].mean(),2))
-    col3.metric("Peak Hour", df["hour"].mode()[0])
+    col3.metric("Average Surge", round(df["surge_multiplier"].mean(),2))
     col4.metric("Average Distance", round(df["distance"].mean(),2))
 
     col1,col2 = st.columns(2)
@@ -165,32 +149,17 @@ elif page == "Weather Impact":
 
     st.title("Weather Impact On Pricing")
 
+    clear_df = df[df["short_summary"]=="Clear"]
+    rain_df = df[df["short_summary"].str.contains("Rain")]
+    fog_df = df[df["short_summary"].str.contains("Fog")]
+
     col1,col2,col3,col4,col5 = st.columns(5)
 
-    col1.metric(
-        "Avg Price Clear",
-        round(df[df["short_summary"]=="Clear"]["price"].mean(),2)
-    )
-
-    col2.metric(
-        "Avg Price Rain",
-        round(df[df["short_summary"].str.contains("Rain")]["price"].mean(),2)
-    )
-
-    col3.metric(
-        "Avg Price Fog",
-        round(df[df["short_summary"].str.contains("Fog")]["price"].mean(),2)
-    )
-
-    col4.metric(
-        "Avg Temperature",
-        round(df["temperature"].mean(),2)
-    )
-
-    col5.metric(
-        "Surge in Rain",
-        round(df[df["short_summary"].str.contains("Rain")]["surge_multiplier"].mean(),2)
-    )
+    col1.metric("Avg Price Clear",round(clear_df["price"].mean(),2))
+    col2.metric("Avg Price Rain",round(rain_df["price"].mean(),2))
+    col3.metric("Avg Price Fog",round(fog_df["price"].mean(),2))
+    col4.metric("Avg Temperature",round(df["temperature"].mean(),2))
+    col5.metric("Surge in Rain",round(rain_df["surge_multiplier"].mean(),2))
 
     st.divider()
 
@@ -198,21 +167,13 @@ elif page == "Weather Impact":
 
     weather_price = df.groupby("short_summary")["price"].mean().reset_index()
 
-    fig1 = px.bar(
-        weather_price,
-        x="short_summary",
-        y="price",
-        title="Average Price by Weather"
-    )
+    fig1 = px.bar(weather_price,x="short_summary",y="price",
+    title="Average Price by Weather")
 
     col1.plotly_chart(fig1,use_container_width=True)
 
-    fig2 = px.scatter(
-        df,
-        x="temperature",
-        y="price",
-        title="Price vs Temperature"
-    )
+    fig2 = px.scatter(df,x="temperature",y="price",
+    title="Price vs Temperature")
 
     col2.plotly_chart(fig2,use_container_width=True)
 
@@ -291,41 +252,26 @@ elif page == "Predictive Modelling":
 
 elif page == "Ride Price Prediction":
 
-    st.title("Ride Price Prediction (Input Dashboard)")
+    st.title("Ride Price Prediction Dashboard")
 
-    st.subheader("Enter Ride Details")
+    col1,col2 = st.columns(2)
 
-    col1,col2,col3 = st.columns(3)
+    r2 = r2_score(df_pred["Actual_Price"],df_pred["Predicted_Price"])
 
-    with col1:
-        distance = st.number_input("Distance (km)",0.5,10.0,2.0)
-        hour = st.slider("Hour",0,23,12)
-        temperature = st.number_input("Temperature",0.0,50.0,25.0)
+    col1.metric("Model Accuracy (R²)",round(r2,2))
+    col2.metric("Total Predictions",len(df_pred))
 
-    with col2:
-        humidity = st.slider("Humidity",0.0,1.0,0.5)
-        wind = st.number_input("Wind Speed",0.0,20.0,5.0)
-        visibility = st.number_input("Visibility",0.0,15.0,10.0)
+    st.divider()
 
-    with col3:
-        cab = st.selectbox("Cab Type",df["cab_type"].unique())
-        weather = st.selectbox("Weather",df["short_summary"].unique())
+    fig = px.scatter(
+        df_pred,
+        x="Actual_Price",
+        y="Predicted_Price",
+        title="Actual vs Predicted Price"
+    )
 
-    if st.button("Predict Ride Price"):
+    st.plotly_chart(fig,use_container_width=True)
 
-        base_price = distance * 3
-        weather_factor = 1.2 if "Rain" in weather else 1
-        temp_factor = temperature/50
+    st.subheader("Prediction Sample Data")
 
-        predicted_price = round(base_price * weather_factor * (1+temp_factor),2)
-
-        success_probability = 90
-
-        st.divider()
-
-        col1,col2 = st.columns(2)
-
-        col1.metric("Predicted Ride Price",f"${predicted_price}")
-        col2.metric("Prediction Confidence",f"{success_probability}%")
-
-        st.success("Prediction Generated Successfully")
+    st.dataframe(df_pred.head(50))
