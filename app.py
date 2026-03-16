@@ -96,7 +96,6 @@ page = st.sidebar.radio(
         "Timing Based Pricing",
         "Weather Impact",
         "Surge Pricing",
-        "Predictive Modelling",
         "Ride Price Prediction"
     ]
 )
