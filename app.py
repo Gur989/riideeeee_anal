@@ -249,4 +249,4 @@ elif page == "Prediction":
         col1.metric("Predicted Price", f"${predicted_price}")
         col2.metric("Model Confidence", f"{confidence}%")
 
-        st.success("Prediction Generated Successfully 🚀")
+        st.success("Prediction Generated Successfully ")
