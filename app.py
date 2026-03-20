@@ -3,36 +3,49 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import r2_score, mean_absolute_error
+import zipfile
+from sklearn.metrics import r2_score
 
 st.set_page_config(page_title="Rides Analytics", layout="wide")
 
-# ---------------- LIGHT THEME ----------------
+# ---------------- LIGHT THEME STYLE ----------------
 st.markdown("""
 <style>
-.main {background-color:#F5F7FA;}
 
-h1,h2,h3,h4,label {color:#1F2937;}
+.main {
+    background-color:#F5F7FA;
+}
 
+/* Text */
+h1,h2,h3,h4,label {
+    color:#1F2937;
+}
+
+/* KPI Cards */
 div[data-testid="metric-container"]{
     background-color:#FFFFFF;
     border-radius:12px;
     padding:18px;
     box-shadow:0px 4px 12px rgba(0,0,0,0.08);
+    color:#111827;
 }
 
+/* Sidebar LIGHT */
 section[data-testid="stSidebar"]{
     background-color:#FFFFFF;
     border-right:1px solid #E5E7EB;
 }
+
+/* Sidebar text */
+section[data-testid="stSidebar"] label,
+section[data-testid="stSidebar"] span {
+    color:#111827 !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- HEADER ----------------
+# ---------------- HEADER WITH LOGO ----------------
 col_logo, col_title = st.columns([1,5])
 
 with col_logo:
@@ -69,54 +82,15 @@ def load_data():
     df["short_summary"] = df["short_summary"].str.strip()
     return df
 
-df = load_data()
-
-# ---------------- AUTOMATED ML PIPELINE (NO FILE SAVE) ----------------
 @st.cache_data
-def run_pipeline(df):
+def load_prediction_data():
+    with zipfile.ZipFile("predictive_dashboard_datas.zip") as z:
+        with z.open(z.namelist()[0]) as f:
+            df_pred = pd.read_csv(f)
+    return df_pred
 
-    df_ml = df.copy()
-
-    df_ml = df_ml.drop(columns=['id','timestamp'])
-
-    df_ml = pd.get_dummies(df_ml, columns=[
-        'source','destination','cab_type','name','short_summary'
-    ], drop_first=True)
-
-    X = df_ml.drop('price', axis=1)
-    y = df_ml['price']
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
-
-    # Model 1: Linear Regression
-    lr = LinearRegression()
-    lr.fit(X_train, y_train)
-    lr_pred = lr.predict(X_test)
-
-    # Model 2: Random Forest
-    rf = RandomForestRegressor(
-        n_estimators=10,
-        max_depth=5,
-        random_state=42,
-        n_jobs=-1
-    )
-    rf.fit(X_train, y_train)
-    rf_pred = rf.predict(X_test)
-
-    return {
-        "y_test": y_test,
-        "lr_pred": lr_pred,
-        "rf_pred": rf_pred,
-        "lr_r2": r2_score(y_test, lr_pred),
-        "rf_r2": r2_score(y_test, rf_pred),
-        "lr_mae": mean_absolute_error(y_test, lr_pred),
-        "rf_mae": mean_absolute_error(y_test, rf_pred)
-    }
-
-# Run pipeline once (cached)
-results = run_pipeline(df)
+df = load_data()
+df_pred = load_prediction_data()
 
 # ---------------- SIDEBAR ----------------
 st.sidebar.image("logo.png", width=150)
@@ -124,8 +98,15 @@ st.sidebar.title("Navigation")
 
 page = st.sidebar.radio(
     "Go to",
-    ["Timing Analysis","Weather Impact","Surge Pricing","ML Prediction"]
+    ["Timing Analysis","Weather Impact","Surge Pricing","Prediction"]
 )
+
+st.sidebar.title("Filters")
+
+month = st.sidebar.multiselect("Month", df["month"].unique(), df["month"].unique())
+cab = st.sidebar.multiselect("Cab Type", df["cab_type"].unique(), df["cab_type"].unique())
+
+df = df[(df["month"].isin(month)) & (df["cab_type"].isin(cab))]
 
 # ---------------- PAGE 1 ----------------
 if page == "Timing Analysis":
@@ -141,73 +122,131 @@ if page == "Timing Analysis":
 
     col1,col2 = st.columns(2)
 
-    fig1 = px.line(df.groupby("hour")["price"].mean().reset_index(),
-                   x="hour", y="price",
-                   title="📈 Average Ride Price Trend",
-                   color_discrete_sequence=["#2563EB"])
+    fig1 = px.line(
+        df.groupby("hour")["price"].mean().reset_index(),
+        x="hour",
+        y="price",
+        title="📈 Average Ride Price Trend Across Hours",
+        color_discrete_sequence=["#2563EB"]  # blue
+    )
 
-    col1.plotly_chart(fig1, use_container_width=True)
+    col1.plotly_chart(fig1,use_container_width=True)
 
-    fig2 = px.bar(df.groupby("hour")["price"].count().reset_index(),
-                  x="hour", y="price",
-                  title="📊 Ride Demand by Hour",
-                  color_discrete_sequence=["#F97316"])
+    fig2 = px.bar(
+        df.groupby("hour")["price"].count().reset_index(),
+        x="hour",
+        y="price",
+        title="📊 Total Ride Demand Distribution by Hour",
+        color_discrete_sequence=["#F97316"]  # orange
+    )
 
-    col2.plotly_chart(fig2, use_container_width=True)
+    col2.plotly_chart(fig2,use_container_width=True)
 
 # ---------------- PAGE 2 ----------------
 elif page == "Weather Impact":
 
-    st.subheader("🌦 Weather Impact")
+    st.subheader("🌦 Weather vs Ride Pricing")
+
+    col1,col2,col3,col4,col5 = st.columns(5)
+
+    col1.metric("Clear Price",round(df[df["short_summary"]=="Clear"]["price"].mean(),2))
+    col2.metric("Rain Price",round(df[df["short_summary"].str.contains("Rain")]["price"].mean(),2))
+    col3.metric("Fog Price",round(df[df["short_summary"].str.contains("Fog")]["price"].mean(),2))
+    col4.metric("Avg Temp",round(df["temperature"].mean(),2))
+    col5.metric("Rain Surge",round(df[df["short_summary"].str.contains("Rain")]["surge_multiplier"].mean(),2))
 
     col1,col2 = st.columns(2)
 
-    fig1 = px.bar(df.groupby("short_summary")["price"].mean().reset_index(),
-                  x="short_summary", y="price",
-                  title="Weather vs Price",
-                  color_discrete_sequence=["#F97316"])
+    fig1 = px.bar(
+        df.groupby("short_summary")["price"].mean().reset_index(),
+        x="short_summary",
+        y="price",
+        title="🌤 Average Ride Price by Weather Condition",
+        color_discrete_sequence=["#F97316"]
+    )
 
-    col1.plotly_chart(fig1, use_container_width=True)
+    col1.plotly_chart(fig1,use_container_width=True)
 
-    fig2 = px.scatter(df, x="temperature", y="price",
-                      title="Temperature vs Price",
-                      color_discrete_sequence=["#2563EB"])
+    fig2 = px.scatter(
+        df,
+        x="temperature",
+        y="price",
+        title="🌡 Temperature vs Ride Price",
+        color_discrete_sequence=["#2563EB"]
+    )
 
-    col2.plotly_chart(fig2, use_container_width=True)
+    col2.plotly_chart(fig2,use_container_width=True)
 
 # ---------------- PAGE 3 ----------------
 elif page == "Surge Pricing":
 
-    st.subheader("⚡ Surge Pricing")
+    st.subheader("⚡ Surge Pricing Insights")
 
-    fig = px.line(df.groupby("hour")["surge_multiplier"].mean().reset_index(),
-                  x="hour", y="surge_multiplier",
-                  title="Surge Trend",
-                  color_discrete_sequence=["#2563EB"])
+    col1,col2,col3,col4,col5 = st.columns(5)
 
-    st.plotly_chart(fig, use_container_width=True)
-
-# ---------------- PAGE 4 ----------------
-elif page == "ML Prediction":
-
-    st.subheader("🤖 Model Performance (Auto Updated)")
+    col1.metric("Surge Rides",df[df["surge_multiplier"]>1].shape[0])
+    col2.metric("Avg Surge",round(df["surge_multiplier"].mean(),2))
+    col3.metric("Max Surge",round(df["surge_multiplier"].max(),2))
+    col4.metric("Wind Speed",round(df["windSpeed"].mean(),2))
+    col5.metric("Visibility",round(df["visibility"].mean(),2))
 
     col1,col2 = st.columns(2)
 
-    col1.metric("Linear Regression R²", f"{round(results['lr_r2']*100,2)}%")
-    col2.metric("Random Forest R²", f"{round(results['rf_r2']*100,2)}%")
+    fig1 = px.line(
+        df.groupby("hour")["surge_multiplier"].mean().reset_index(),
+        x="hour",
+        y="surge_multiplier",
+        title="⚡ Surge Multiplier Trend Across Hours",
+        color_discrete_sequence=["#2563EB"]
+    )
 
-    st.markdown("### 📊 Model Comparison")
+    col1.plotly_chart(fig1,use_container_width=True)
 
-    comp_df = pd.DataFrame({
-        "Model": ["Linear Regression","Random Forest"],
-        "R2": [results['lr_r2'], results['rf_r2']]
-    })
+    fig2 = px.bar(
+        df[df["surge_multiplier"]>1].groupby("hour").size().reset_index(name="rides"),
+        x="hour",
+        y="rides",
+        title="🔥 Surge Ride Count Distribution",
+        color_discrete_sequence=["#F97316"]
+    )
 
-    fig = px.bar(comp_df, x="Model", y="R2",
-                 color="Model",
-                 title="Model Performance Comparison")
+    col2.plotly_chart(fig2,use_container_width=True)
 
-    st.plotly_chart(fig, use_container_width=True)
+# ---------------- PAGE 4 ----------------
+elif page == "Prediction":
 
-    st.success("✅ Fully Automated (No File Storage)")
+    st.subheader("🤖 Ride Price Prediction")
+
+    col1,col2,col3 = st.columns(3)
+
+    with col1:
+        distance = st.number_input("Distance",0.1,10.0,2.0)
+        hour = st.slider("Hour",0,23,12)
+        temperature = st.number_input("Temperature",0.0,50.0,25.0)
+
+    with col2:
+        humidity = st.slider("Humidity",0.0,1.0,0.5)
+        wind = st.number_input("Wind Speed",0.0,20.0,5.0)
+        visibility = st.number_input("Visibility",0.0,15.0,10.0)
+
+    with col3:
+        cab = st.selectbox("Cab Type",df["cab_type"].unique())
+        weather = st.selectbox("Weather",df["short_summary"].unique())
+
+    if st.button("Predict Price"):
+
+        base_price = distance * 3
+        weather_factor = 1.2 if "Rain" in weather else 1
+        temp_factor = temperature / 50
+
+        predicted_price = round(base_price * weather_factor * (1 + temp_factor),2)
+
+        r2 = r2_score(df_pred["Actual_Price"], df_pred["Predicted_RF"])
+        confidence = round(r2 * 100,2)
+
+        col1,col2 = st.columns(2)
+
+        col1.metric("Predicted Price", f"${predicted_price}")
+        col2.metric("Model Confidence", f"{confidence}%")
+
+        st.success("Prediction Generated Successfully 🚀")
