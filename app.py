@@ -8,39 +8,51 @@ from sklearn.metrics import r2_score
 
 st.set_page_config(page_title="Ride Analytics Dashboard", layout="wide")
 
-# ---------------- STYLE ----------------
+# ---------------- CUSTOM STYLE ----------------
 st.markdown("""
 <style>
-.main {background-color:#F0F2F6;}
 
-h1,h2,h3{
-color:#000000;
+.main {
+    background-color:#F5F7FA;
 }
 
+/* Header */
+.header {
+    font-size:30px;
+    font-weight:bold;
+    padding:10px 0;
+}
+
+/* KPI Cards */
 div[data-testid="metric-container"]{
-background-color:#FFFFFF;
-border-radius:12px;
-padding:15px;
-box-shadow:0px 4px 10px rgba(0,0,0,0.08);
+    background-color:#FFFFFF;
+    border-radius:12px;
+    padding:18px;
+    box-shadow:0px 4px 12px rgba(0,0,0,0.08);
+    text-align:center;
 }
 
+/* Sidebar */
 section[data-testid="stSidebar"]{
-background-color:#E9ECEF;
+    background-color:#FFFFFF;
+    padding:20px;
 }
 
-section[data-testid="stSidebar"] label{
-color:black !important;
+.sidebar-title {
+    font-size:22px;
+    font-weight:bold;
+    margin-bottom:20px;
 }
+
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- LOGIN SYSTEM ----------------
+# ---------------- LOGIN ----------------
 if "login" not in st.session_state:
     st.session_state.login = False
 
 def login():
-    st.title("Ride Analytics Login")
-
+    st.title("🔐 Ride Analytics Login")
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
 
@@ -48,7 +60,7 @@ def login():
         if username == "admin" and password == "1234":
             st.session_state.login = True
         else:
-            st.error("Invalid username or password")
+            st.error("Invalid credentials")
 
 if not st.session_state.login:
     login()
@@ -61,7 +73,6 @@ def load_data():
     df["short_summary"] = df["short_summary"].str.strip()
     return df
 
-# 🔥 UPDATED ZIP FILE NAME HERE
 @st.cache_data
 def load_prediction_data():
     with zipfile.ZipFile("predictive_dashboard_datas.zip") as z:
@@ -73,37 +84,42 @@ df = load_data()
 df_pred = load_prediction_data()
 
 # ---------------- SIDEBAR ----------------
-st.sidebar.title("Navigation")
+st.sidebar.markdown("## 🚖 Ride Dashboard")
 
 page = st.sidebar.radio(
-    "Go to",
+    "Select Dashboard",
     [
-        "Timing Based Pricing",
+        "Timing Analysis",
         "Weather Impact",
         "Surge Pricing",
-        "Ride Price Prediction"
+        "Prediction"
     ]
 )
 
-# ---------------- FILTERS ----------------
-st.sidebar.title("Filters")
+st.sidebar.markdown("### Filters")
 
 month = st.sidebar.multiselect("Month", df["month"].unique(), df["month"].unique())
 cab = st.sidebar.multiselect("Cab Type", df["cab_type"].unique(), df["cab_type"].unique())
 
 df = df[(df["month"].isin(month)) & (df["cab_type"].isin(cab))]
 
-# ---------------- PAGE 1 ----------------
-if page == "Timing Based Pricing":
+# ---------------- HEADER ----------------
+st.markdown("## 🚖 Ride Analytics Dashboard")
+st.markdown("---")
 
-    st.title("Timing Based Pricing")
+# ---------------- PAGE 1 ----------------
+if page == "Timing Analysis":
+
+    st.subheader("📊 Timing Based Pricing Overview")
 
     col1,col2,col3,col4 = st.columns(4)
 
     col1.metric("Total Rides", len(df))
-    col2.metric("Average Price", round(df["price"].mean(),2))
-    col3.metric("Average Surge", round(df["surge_multiplier"].mean(),2))
-    col4.metric("Average Distance", round(df["distance"].mean(),2))
+    col2.metric("Avg Price", round(df["price"].mean(),2))
+    col3.metric("Avg Surge", round(df["surge_multiplier"].mean(),2))
+    col4.metric("Avg Distance", round(df["distance"].mean(),2))
+
+    st.markdown("### 📈 Trends")
 
     col1,col2 = st.columns(2)
 
@@ -111,7 +127,7 @@ if page == "Timing Based Pricing":
         df.groupby("hour")["price"].mean().reset_index(),
         x="hour",
         y="price",
-        title="Average Price per Hour"
+        title="Price Trend by Hour"
     )
     col1.plotly_chart(fig1,use_container_width=True)
 
@@ -119,91 +135,72 @@ if page == "Timing Based Pricing":
         df.groupby("hour")["price"].count().reset_index(),
         x="hour",
         y="price",
-        title="Ride Count per Hour"
+        title="Ride Count by Hour"
     )
     col2.plotly_chart(fig2,use_container_width=True)
 
 # ---------------- PAGE 2 ----------------
 elif page == "Weather Impact":
 
-    st.title("Weather Impact On Pricing")
-
-    clear_df = df[df["short_summary"]=="Clear"]
-    rain_df = df[df["short_summary"].str.contains("Rain")]
-    fog_df = df[df["short_summary"].str.contains("Fog")]
+    st.subheader("🌦 Weather Impact Analysis")
 
     col1,col2,col3,col4,col5 = st.columns(5)
 
-    col1.metric("Avg Price Clear",round(clear_df["price"].mean(),2))
-    col2.metric("Avg Price Rain",round(rain_df["price"].mean(),2))
-    col3.metric("Avg Price Fog",round(fog_df["price"].mean(),2))
-    col4.metric("Avg Temperature",round(df["temperature"].mean(),2))
-    col5.metric("Surge in Rain",round(rain_df["surge_multiplier"].mean(),2))
+    col1.metric("Clear Price",round(df[df["short_summary"]=="Clear"]["price"].mean(),2))
+    col2.metric("Rain Price",round(df[df["short_summary"].str.contains("Rain")]["price"].mean(),2))
+    col3.metric("Fog Price",round(df[df["short_summary"].str.contains("Fog")]["price"].mean(),2))
+    col4.metric("Avg Temp",round(df["temperature"].mean(),2))
+    col5.metric("Rain Surge",round(df[df["short_summary"].str.contains("Rain")]["surge_multiplier"].mean(),2))
 
-    st.divider()
+    st.markdown("### 📊 Weather Insights")
 
     col1,col2 = st.columns(2)
 
-    weather_price = df.groupby("short_summary")["price"].mean().reset_index()
+    fig1 = px.bar(df.groupby("short_summary")["price"].mean().reset_index(),
+    x="short_summary",y="price")
 
-    fig1 = px.bar(weather_price,x="short_summary",y="price",
-    title="Average Price by Weather")
     col1.plotly_chart(fig1,use_container_width=True)
 
-    fig2 = px.scatter(df,x="temperature",y="price",
-    title="Price vs Temperature")
+    fig2 = px.scatter(df,x="temperature",y="price")
     col2.plotly_chart(fig2,use_container_width=True)
 
 # ---------------- PAGE 3 ----------------
 elif page == "Surge Pricing":
 
-    st.title("Surge Pricing Analysis")
+    st.subheader("⚡ Surge Pricing Analysis")
 
     col1,col2,col3,col4,col5 = st.columns(5)
 
-    col1.metric("Total Surge Rides",df[df["surge_multiplier"]>1].shape[0])
+    col1.metric("Surge Rides",df[df["surge_multiplier"]>1].shape[0])
     col2.metric("Avg Surge",round(df["surge_multiplier"].mean(),2))
     col3.metric("Max Surge",round(df["surge_multiplier"].max(),2))
-    col4.metric("Avg Wind Speed",round(df["windSpeed"].mean(),2))
-    col5.metric("Avg Visibility",round(df["visibility"].mean(),2))
+    col4.metric("Wind Speed",round(df["windSpeed"].mean(),2))
+    col5.metric("Visibility",round(df["visibility"].mean(),2))
 
-    st.divider()
+    st.markdown("### 📈 Surge Trends")
 
     col1,col2 = st.columns(2)
 
-    surge_hour = df.groupby("hour")["surge_multiplier"].mean().reset_index()
+    fig1 = px.line(df.groupby("hour")["surge_multiplier"].mean().reset_index(),
+    x="hour",y="surge_multiplier")
 
-    fig3 = px.line(
-        surge_hour,
-        x="hour",
-        y="surge_multiplier",
-        markers=True,
-        title="Surge Multiplier by Hour"
-    )
-    col1.plotly_chart(fig3,use_container_width=True)
+    col1.plotly_chart(fig1,use_container_width=True)
 
-    surge_rides = df[df["surge_multiplier"]>1].groupby("hour").size().reset_index(name="rides")
+    fig2 = px.bar(df[df["surge_multiplier"]>1].groupby("hour").size().reset_index(name="rides"),
+    x="hour",y="rides")
 
-    fig4 = px.bar(
-        surge_rides,
-        x="hour",
-        y="rides",
-        title="Surge Rides by Hour"
-    )
-    col2.plotly_chart(fig4,use_container_width=True)
+    col2.plotly_chart(fig2,use_container_width=True)
 
 # ---------------- PAGE 4 ----------------
-elif page == "Ride Price Prediction":
+elif page == "Prediction":
 
-    st.title("Ride Price Prediction Dashboard")
-
-    st.subheader("Enter Ride Details")
+    st.subheader("🤖 Ride Price Prediction")
 
     col1,col2,col3 = st.columns(3)
 
     with col1:
-        distance = st.number_input("Distance (km)",0.1,10.0,2.0)
-        hour = st.slider("Hour of Day",0,23,12)
+        distance = st.number_input("Distance",0.1,10.0,2.0)
+        hour = st.slider("Hour",0,23,12)
         temperature = st.number_input("Temperature",0.0,50.0,25.0)
 
     with col2:
@@ -215,7 +212,7 @@ elif page == "Ride Price Prediction":
         cab = st.selectbox("Cab Type",df["cab_type"].unique())
         weather = st.selectbox("Weather",df["short_summary"].unique())
 
-    if st.button("Predict Ride Price"):
+    if st.button("Predict Price"):
 
         base_price = distance * 3
         weather_factor = 1.2 if "Rain" in weather else 1
@@ -223,16 +220,14 @@ elif page == "Ride Price Prediction":
 
         predicted_price = round(base_price * weather_factor * (1 + temp_factor),2)
 
-        # 🔥 UPDATED: using Random Forest prediction
         r2 = r2_score(df_pred["Actual_Price"], df_pred["Predicted_RF"])
-
         confidence = round(r2 * 100,2)
 
-        st.divider()
+        st.markdown("### 🎯 Prediction Result")
 
         col1,col2 = st.columns(2)
 
-        col1.metric("Predicted Ride Price", f"${predicted_price}")
-        col2.metric("Prediction Confidence", f"{confidence}%")
+        col1.metric("Predicted Price", f"${predicted_price}")
+        col2.metric("Model Confidence", f"{confidence}%")
 
-        st.success("Prediction Generated Successfully")
+        st.success("Prediction Generated Successfully 🚀")
