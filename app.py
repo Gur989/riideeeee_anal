@@ -8,30 +8,38 @@ from sklearn.metrics import r2_score
 
 st.set_page_config(page_title="Rides Analytics", layout="wide")
 
-# ---------------- STYLE ----------------
+# ---------------- LIGHT THEME STYLE ----------------
 st.markdown("""
 <style>
+
 .main {
-    background-color:#0F172A;
+    background-color:#F5F7FA;
 }
 
 /* Text */
 h1,h2,h3,h4,label {
-    color:white;
+    color:#1F2937;
 }
 
 /* KPI Cards */
 div[data-testid="metric-container"]{
-    background: linear-gradient(135deg, #1E293B, #020617);
+    background-color:#FFFFFF;
     border-radius:12px;
     padding:18px;
-    box-shadow:0px 4px 12px rgba(0,0,0,0.4);
-    color:white;
+    box-shadow:0px 4px 12px rgba(0,0,0,0.08);
+    color:#111827;
 }
 
-/* Sidebar */
+/* Sidebar LIGHT */
 section[data-testid="stSidebar"]{
-    background-color:#020617;
+    background-color:#FFFFFF;
+    border-right:1px solid #E5E7EB;
+}
+
+/* Sidebar text */
+section[data-testid="stSidebar"] label,
+section[data-testid="stSidebar"] span {
+    color:#111827 !important;
 }
 
 </style>
@@ -119,7 +127,7 @@ if page == "Timing Analysis":
         x="hour",
         y="price",
         title="📈 Average Ride Price Trend Across Hours",
-        color_discrete_sequence=["#00BFFF"]
+        color_discrete_sequence=["#2563EB"]  # blue
     )
 
     col1.plotly_chart(fig1,use_container_width=True)
@@ -129,7 +137,7 @@ if page == "Timing Analysis":
         x="hour",
         y="price",
         title="📊 Total Ride Demand Distribution by Hour",
-        color_discrete_sequence=["#FF7A00"]
+        color_discrete_sequence=["#F97316"]  # orange
     )
 
     col2.plotly_chart(fig2,use_container_width=True)
@@ -154,7 +162,7 @@ elif page == "Weather Impact":
         x="short_summary",
         y="price",
         title="🌤 Average Ride Price by Weather Condition",
-        color_discrete_sequence=["#FF7A00"]
+        color_discrete_sequence=["#F97316"]
     )
 
     col1.plotly_chart(fig1,use_container_width=True)
@@ -163,8 +171,8 @@ elif page == "Weather Impact":
         df,
         x="temperature",
         y="price",
-        title="🌡 Relationship Between Temperature and Ride Price",
-        color_discrete_sequence=["#00BFFF"]
+        title="🌡 Temperature vs Ride Price",
+        color_discrete_sequence=["#2563EB"]
     )
 
     col2.plotly_chart(fig2,use_container_width=True)
@@ -189,7 +197,7 @@ elif page == "Surge Pricing":
         x="hour",
         y="surge_multiplier",
         title="⚡ Surge Multiplier Trend Across Hours",
-        color_discrete_sequence=["#00BFFF"]
+        color_discrete_sequence=["#2563EB"]
     )
 
     col1.plotly_chart(fig1,use_container_width=True)
@@ -198,8 +206,8 @@ elif page == "Surge Pricing":
         df[df["surge_multiplier"]>1].groupby("hour").size().reset_index(name="rides"),
         x="hour",
         y="rides",
-        title="🔥 Surge Ride Count Distribution by Hour",
-        color_discrete_sequence=["#FF7A00"]
+        title="🔥 Surge Ride Count Distribution",
+        color_discrete_sequence=["#F97316"]
     )
 
     col2.plotly_chart(fig2,use_container_width=True)
@@ -207,7 +215,7 @@ elif page == "Surge Pricing":
 # ---------------- PAGE 4 ----------------
 elif page == "Prediction":
 
-    st.subheader("🤖 Ride Price Prediction Engine")
+    st.subheader("🤖 Ride Price Prediction")
 
     col1,col2,col3 = st.columns(3)
 
