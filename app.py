@@ -9,7 +9,6 @@ from sklearn.metrics import r2_score
 st.set_page_config(page_title="Ride Analytics Dashboard", layout="wide")
 
 # ---------------- STYLE ----------------
-
 st.markdown("""
 <style>
 .main {background-color:#F0F2F6;}
@@ -36,58 +35,44 @@ color:black !important;
 """, unsafe_allow_html=True)
 
 # ---------------- LOGIN SYSTEM ----------------
-
 if "login" not in st.session_state:
     st.session_state.login = False
 
-
 def login():
-
     st.title("Ride Analytics Login")
 
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
 
     if st.button("Login"):
-
         if username == "admin" and password == "1234":
             st.session_state.login = True
-
         else:
             st.error("Invalid username or password")
-
 
 if not st.session_state.login:
     login()
     st.stop()
 
 # ---------------- LOAD DATA ----------------
-
 @st.cache_data
 def load_data():
-
     df = pd.read_csv("new_rider_share10.csv")
-
     df["short_summary"] = df["short_summary"].str.strip()
-
     return df
 
-
+# 🔥 UPDATED ZIP FILE NAME HERE
 @st.cache_data
 def load_prediction_data():
-
-    with zipfile.ZipFile("predictive_model_data.zip") as z:
+    with zipfile.ZipFile("predictive_dashboard_datas.zip") as z:
         with z.open(z.namelist()[0]) as f:
             df_pred = pd.read_csv(f)
-
     return df_pred
-
 
 df = load_data()
 df_pred = load_prediction_data()
 
 # ---------------- SIDEBAR ----------------
-
 st.sidebar.title("Navigation")
 
 page = st.sidebar.radio(
@@ -101,7 +86,6 @@ page = st.sidebar.radio(
 )
 
 # ---------------- FILTERS ----------------
-
 st.sidebar.title("Filters")
 
 month = st.sidebar.multiselect("Month", df["month"].unique(), df["month"].unique())
@@ -110,7 +94,6 @@ cab = st.sidebar.multiselect("Cab Type", df["cab_type"].unique(), df["cab_type"]
 df = df[(df["month"].isin(month)) & (df["cab_type"].isin(cab))]
 
 # ---------------- PAGE 1 ----------------
-
 if page == "Timing Based Pricing":
 
     st.title("Timing Based Pricing")
@@ -130,7 +113,6 @@ if page == "Timing Based Pricing":
         y="price",
         title="Average Price per Hour"
     )
-
     col1.plotly_chart(fig1,use_container_width=True)
 
     fig2 = px.bar(
@@ -139,11 +121,9 @@ if page == "Timing Based Pricing":
         y="price",
         title="Ride Count per Hour"
     )
-
     col2.plotly_chart(fig2,use_container_width=True)
 
 # ---------------- PAGE 2 ----------------
-
 elif page == "Weather Impact":
 
     st.title("Weather Impact On Pricing")
@@ -168,16 +148,13 @@ elif page == "Weather Impact":
 
     fig1 = px.bar(weather_price,x="short_summary",y="price",
     title="Average Price by Weather")
-
     col1.plotly_chart(fig1,use_container_width=True)
 
     fig2 = px.scatter(df,x="temperature",y="price",
     title="Price vs Temperature")
-
     col2.plotly_chart(fig2,use_container_width=True)
 
 # ---------------- PAGE 3 ----------------
-
 elif page == "Surge Pricing":
 
     st.title("Surge Pricing Analysis")
@@ -203,7 +180,6 @@ elif page == "Surge Pricing":
         markers=True,
         title="Surge Multiplier by Hour"
     )
-
     col1.plotly_chart(fig3,use_container_width=True)
 
     surge_rides = df[df["surge_multiplier"]>1].groupby("hour").size().reset_index(name="rides")
@@ -214,13 +190,9 @@ elif page == "Surge Pricing":
         y="rides",
         title="Surge Rides by Hour"
     )
-
     col2.plotly_chart(fig4,use_container_width=True)
 
-
-
-# ---------------- PAGE 5 ----------------
-
+# ---------------- PAGE 4 ----------------
 elif page == "Ride Price Prediction":
 
     st.title("Ride Price Prediction Dashboard")
@@ -245,16 +217,14 @@ elif page == "Ride Price Prediction":
 
     if st.button("Predict Ride Price"):
 
-        # simple prediction formula
         base_price = distance * 3
-
         weather_factor = 1.2 if "Rain" in weather else 1
         temp_factor = temperature / 50
 
         predicted_price = round(base_price * weather_factor * (1 + temp_factor),2)
 
-        # calculate model confidence using R²
-        r2 = r2_score(df_pred["Actual_Price"], df_pred["Predicted_Price"])
+        # 🔥 UPDATED: using Random Forest prediction
+        r2 = r2_score(df_pred["Actual_Price"], df_pred["Predicted_RF"])
 
         confidence = round(r2 * 100,2)
 
