@@ -292,28 +292,7 @@ elif page == "Surge Pricing":
     # -------- ROW 2 --------
     col3, col4 = st.columns(2)
 
-    # 3️⃣ Surge % by Weather
-    fig3 = px.bar(
-        df.groupby("short_summary")["surge_multiplier"].mean().reset_index(),
-        x="short_summary",
-        y="surge_multiplier",
-        title="Surge % by Weather"
-    )
-    fig3.update_traces(marker_color="#1D4ED8")
-
-    col3.plotly_chart(fig3, use_container_width=True)
-
-   # 4️⃣ Price vs Distance (NO ERROR VERSION)
-fig4 = px.line(
-    df.sort_values("distance"),
-    x="distance",
-    y="price",
-    title="Price vs Distance Trend"
-)
-
-fig4.update_traces(line_color="#374151")
-
-col4.plotly_chart(fig4, use_container_width=True)
+   
 
 # ---------------- PAGE 4 ----------------
 elif page == "Prediction":
