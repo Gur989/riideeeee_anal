@@ -246,39 +246,75 @@ elif page == "Weather Impact":
 
     col4.plotly_chart(fig4, use_container_width=True)
 # ---------------- PAGE 3 ----------------
+# ---------------- PAGE 3 ----------------
 elif page == "Surge Pricing":
 
-    st.subheader("⚡ Surge Pricing Insights")
+    st.subheader("⚡ Surge Pricing and Routes")
 
-    col1,col2,col3,col4,col5 = st.columns(5)
+    # -------- KPI --------
+    col1,col2,col3,col4,col5,col6 = st.columns(6)
 
-    col1.metric("Surge Rides",df[df["surge_multiplier"]>1].shape[0])
-    col2.metric("Avg Surge",round(df["surge_multiplier"].mean(),2))
-    col3.metric("Max Surge",round(df["surge_multiplier"].max(),2))
-    col4.metric("Wind Speed",round(df["windSpeed"].mean(),2))
-    col5.metric("Visibility",round(df["visibility"].mean(),2))
+    col1.metric("Total Surge Rides", df[df["surge_multiplier"]>1].shape[0])
+    col2.metric("Average Surge Multiplier", round(df["surge_multiplier"].mean(),2))
+    col3.metric("Maximum Surge Multiplier", round(df["surge_multiplier"].max(),2))
+    col4.metric("Average Wind Speed", round(df["windSpeed"].mean(),2))
+    col5.metric("Average Visibility", round(df["visibility"].mean(),2))
+    col6.metric("Total Routes", df["source"].nunique())
 
-    col1,col2 = st.columns(2)
+    st.markdown("---")
 
+    # -------- ROW 1 --------
+    col1, col2 = st.columns(2)
+
+    # 1️⃣ Surge Trend by Hour
     fig1 = px.line(
         df.groupby("hour")["surge_multiplier"].mean().reset_index(),
         x="hour",
         y="surge_multiplier",
-        title="⚡ Surge Multiplier Trend Across Hours",
-        color_discrete_sequence=["#2563EB"]
+        title="Average Surge Multiplier in Hours",
+        markers=True
     )
+    fig1.update_traces(line_color="#1D4ED8")
 
-    col1.plotly_chart(fig1,use_container_width=True)
+    col1.plotly_chart(fig1, use_container_width=True)
 
+    # 2️⃣ Surge Ride Count by Hour
     fig2 = px.bar(
         df[df["surge_multiplier"]>1].groupby("hour").size().reset_index(name="rides"),
         x="hour",
         y="rides",
-        title="🔥 Surge Ride Count Distribution",
-        color_discrete_sequence=["#F97316"]
+        title="Surge Rides by Hour"
     )
+    fig2.update_traces(marker_color="#374151")
 
-    col2.plotly_chart(fig2,use_container_width=True)
+    col2.plotly_chart(fig2, use_container_width=True)
+
+    # -------- ROW 2 --------
+    col3, col4 = st.columns(2)
+
+    # 3️⃣ Surge % by Weather
+    fig3 = px.bar(
+        df.groupby("short_summary")["surge_multiplier"].mean().reset_index(),
+        x="short_summary",
+        y="surge_multiplier",
+        title="Surge % by Weather"
+    )
+    fig3.update_traces(marker_color="#1D4ED8")
+
+    col3.plotly_chart(fig3, use_container_width=True)
+
+    # 4️⃣ Price vs Distance (Better than raw scatter)
+    fig4 = px.scatter(
+        df,
+        x="distance",
+        y="price",
+        title="Price vs Distance (Ride Cost Pattern)",
+        opacity=0.5,
+        trendline="ols"
+    )
+    fig4.update_traces(marker_color="#374151")
+
+    col4.plotly_chart(fig4, use_container_width=True)
 
 # ---------------- PAGE 4 ----------------
 elif page == "Prediction":
