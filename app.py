@@ -122,25 +122,54 @@ if page == "Timing Analysis":
 
     col1,col2 = st.columns(2)
 
+   # 1️⃣ Average Price Per Hour
     fig1 = px.line(
         df.groupby("hour")["price"].mean().reset_index(),
         x="hour",
         y="price",
-        title="📈 Average Ride Price Trend Across Hours",
-        color_discrete_sequence=["#2563EB"]  # blue
+        title="Average Price in Each Hour",
+        markers=True
     )
+    fig1.update_traces(line_color="#1D4ED8")  # BLUE
 
-    col1.plotly_chart(fig1,use_container_width=True)
+    col1.plotly_chart(fig1, use_container_width=True)
 
-    fig2 = px.bar(
-        df.groupby("hour")["price"].count().reset_index(),
+    # 2️⃣ Ride Count Per Hour
+    fig2 = px.line(
+        df.groupby("hour").size().reset_index(name="rides"),
         x="hour",
-        y="price",
-        title="📊 Total Ride Demand Distribution by Hour",
-        color_discrete_sequence=["#F97316"]  # orange
+        y="rides",
+        title="Ride Count Per Hour",
+        markers=True
     )
+    fig2.update_traces(line_color="#374151")  # DARK GRAY
 
-    col2.plotly_chart(fig2,use_container_width=True)
+    col2.plotly_chart(fig2, use_container_width=True)
+
+    # SECOND ROW
+    col3, col4 = st.columns(2)
+
+    # 3️⃣ Average Surge Per Hour
+    fig3 = px.bar(
+        df.groupby("hour")["surge_multiplier"].mean().reset_index(),
+        x="hour",
+        y="surge_multiplier",
+        title="Average Surge in Each Hour"
+    )
+    fig3.update_traces(marker_color="#1D4ED8")
+
+    col3.plotly_chart(fig3, use_container_width=True)
+
+    # 4️⃣ Average Visibility Per Hour
+    fig4 = px.bar(
+        df.groupby("hour")["visibility"].mean().reset_index(),
+        x="hour",
+        y="visibility",
+        title="Average Visibility in Each Hour"
+    )
+    fig4.update_traces(marker_color="#374151")
+
+    col4.plotly_chart(fig4, use_container_width=True)
 
 # ---------------- PAGE 2 ----------------
 elif page == "Weather Impact":
