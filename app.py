@@ -303,18 +303,17 @@ elif page == "Surge Pricing":
 
     col3.plotly_chart(fig3, use_container_width=True)
 
-    # 4️⃣ Price vs Distance (Better than raw scatter)
-    fig4 = px.scatter(
-        df,
-        x="distance",
-        y="price",
-        title="Price vs Distance (Ride Cost Pattern)",
-        opacity=0.5,
-        trendline="ols"
-    )
-    fig4.update_traces(marker_color="#374151")
+   # 4️⃣ Price vs Distance (NO ERROR VERSION)
+fig4 = px.line(
+    df.sort_values("distance"),
+    x="distance",
+    y="price",
+    title="Price vs Distance Trend"
+)
 
-    col4.plotly_chart(fig4, use_container_width=True)
+fig4.update_traces(line_color="#374151")
+
+col4.plotly_chart(fig4, use_container_width=True)
 
 # ---------------- PAGE 4 ----------------
 elif page == "Prediction":
