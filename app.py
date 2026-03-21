@@ -52,7 +52,7 @@ with col_logo:
     st.image("logo.png", width=120)
 
 with col_title:
-    st.markdown("# 🚀 Rides Analytics Dashboard")
+    st.markdown("# Rides Analytics Dashboard")
 
 st.markdown("---")
 
