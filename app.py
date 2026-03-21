@@ -172,6 +172,7 @@ if page == "Timing Analysis":
     col4.plotly_chart(fig4, use_container_width=True)
 
 # ---------------- PAGE 2 ----------------
+# ---------------- PAGE 2 ----------------
 elif page == "Weather Impact":
 
     st.subheader("🌦 Weather vs Ride Pricing")
@@ -184,46 +185,46 @@ elif page == "Weather Impact":
     col4.metric("Avg Temp",round(df["temperature"].mean(),2))
     col5.metric("Rain Surge",round(df[df["short_summary"].str.contains("Rain")]["surge_multiplier"].mean(),2))
 
-    col1,col2 = st.columns(2)
+    # -------- ROW 1 --------
+    col1, col2 = st.columns(2)
 
-   # 1️⃣ Avg Price by Weather
+    # 1️⃣ Avg Price by Weather
     fig1 = px.bar(
         df.groupby("short_summary")["price"].mean().reset_index(),
         x="short_summary",
         y="price",
         title="Average Price by Weather"
     )
-    fig1.update_traces(marker_color="#1D4ED8")  # BLUE
+    fig1.update_traces(marker_color="#1D4ED8")
 
     col1.plotly_chart(fig1, use_container_width=True)
 
-   # 2️⃣ Price vs Temperature (Improved)
-fig2 = px.scatter(
-    df,
-    x="temperature",
-    y="price",
-    title="Price vs Temperature (with Trend)",
-    opacity=0.5,
-    trendline="ols"   # ⭐ IMPORTANT
-)
+    # 2️⃣ Price vs Temperature (FIXED INDENT)
+    fig2 = px.scatter(
+        df,
+        x="temperature",
+        y="price",
+        title="Price vs Temperature (with Trend)",
+        opacity=0.5,
+        trendline="ols"
+    )
+    fig2.update_traces(marker_color="#374151")
 
-fig2.update_traces(marker_color="#374151")
+    col2.plotly_chart(fig2, use_container_width=True)
 
-col2.plotly_chart(fig2, use_container_width=True)
-    # -------- CHARTS (ROW 2) --------
+    # -------- ROW 2 --------
     col3, col4 = st.columns(2)
 
-  # 3️⃣ Price vs Visibility (Box Plot - Better Insight)
-fig3 = px.box(
-    df,
-    x=pd.cut(df["visibility"], bins=5),  # group visibility
-    y="price",
-    title="Price Distribution by Visibility Levels"
-)
+    # 3️⃣ Price vs Visibility (BOX)
+    fig3 = px.box(
+        df,
+        x=pd.cut(df["visibility"], bins=5),
+        y="price",
+        title="Price Distribution by Visibility Levels"
+    )
+    fig3.update_traces(marker_color="#1D4ED8")
 
-fig3.update_traces(marker_color="#1D4ED8")
-
-col3.plotly_chart(fig3, use_container_width=True)
+    col3.plotly_chart(fig3, use_container_width=True)
 
     # 4️⃣ Surge % by Weather
     fig4 = px.bar(
@@ -235,7 +236,6 @@ col3.plotly_chart(fig3, use_container_width=True)
     fig4.update_traces(marker_color="#1D4ED8")
 
     col4.plotly_chart(fig4, use_container_width=True)
-
 # ---------------- PAGE 3 ----------------
 elif page == "Surge Pricing":
 
