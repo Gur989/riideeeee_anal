@@ -197,30 +197,33 @@ elif page == "Weather Impact":
 
     col1.plotly_chart(fig1, use_container_width=True)
 
-    # 2️⃣ Price vs Temperature
-    fig2 = px.scatter(
-        df,
-        x="temperature",
-        y="price",
-        title="Price vs Temperature"
-    )
-    fig2.update_traces(marker_color="#374151")  # DARK GRAY
+   # 2️⃣ Price vs Temperature (Improved)
+fig2 = px.scatter(
+    df,
+    x="temperature",
+    y="price",
+    title="Price vs Temperature (with Trend)",
+    opacity=0.5,
+    trendline="ols"   # ⭐ IMPORTANT
+)
 
-    col2.plotly_chart(fig2, use_container_width=True)
+fig2.update_traces(marker_color="#374151")
 
+col2.plotly_chart(fig2, use_container_width=True)
     # -------- CHARTS (ROW 2) --------
     col3, col4 = st.columns(2)
 
-    # 3️⃣ Price vs Visibility
-    fig3 = px.scatter(
-        df,
-        x="visibility",
-        y="price",
-        title="Price vs Visibility"
-    )
-    fig3.update_traces(marker_color="#374151")
+  # 3️⃣ Price vs Visibility (Box Plot - Better Insight)
+fig3 = px.box(
+    df,
+    x=pd.cut(df["visibility"], bins=5),  # group visibility
+    y="price",
+    title="Price Distribution by Visibility Levels"
+)
 
-    col3.plotly_chart(fig3, use_container_width=True)
+fig3.update_traces(marker_color="#1D4ED8")
+
+col3.plotly_chart(fig3, use_container_width=True)
 
     # 4️⃣ Surge % by Weather
     fig4 = px.bar(
