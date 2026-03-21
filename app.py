@@ -186,25 +186,52 @@ elif page == "Weather Impact":
 
     col1,col2 = st.columns(2)
 
+   # 1️⃣ Avg Price by Weather
     fig1 = px.bar(
         df.groupby("short_summary")["price"].mean().reset_index(),
         x="short_summary",
         y="price",
-        title="🌤 Average Ride Price by Weather Condition",
-        color_discrete_sequence=["#F97316"]
+        title="Average Price by Weather"
     )
+    fig1.update_traces(marker_color="#1D4ED8")  # BLUE
 
-    col1.plotly_chart(fig1,use_container_width=True)
+    col1.plotly_chart(fig1, use_container_width=True)
 
+    # 2️⃣ Price vs Temperature
     fig2 = px.scatter(
         df,
         x="temperature",
         y="price",
-        title="🌡 Temperature vs Ride Price",
-        color_discrete_sequence=["#2563EB"]
+        title="Price vs Temperature"
     )
+    fig2.update_traces(marker_color="#374151")  # DARK GRAY
 
-    col2.plotly_chart(fig2,use_container_width=True)
+    col2.plotly_chart(fig2, use_container_width=True)
+
+    # -------- CHARTS (ROW 2) --------
+    col3, col4 = st.columns(2)
+
+    # 3️⃣ Price vs Visibility
+    fig3 = px.scatter(
+        df,
+        x="visibility",
+        y="price",
+        title="Price vs Visibility"
+    )
+    fig3.update_traces(marker_color="#374151")
+
+    col3.plotly_chart(fig3, use_container_width=True)
+
+    # 4️⃣ Surge % by Weather
+    fig4 = px.bar(
+        df.groupby("short_summary")["surge_multiplier"].mean().reset_index(),
+        x="short_summary",
+        y="surge_multiplier",
+        title="Surge % by Weather"
+    )
+    fig4.update_traces(marker_color="#1D4ED8")
+
+    col4.plotly_chart(fig4, use_container_width=True)
 
 # ---------------- PAGE 3 ----------------
 elif page == "Surge Pricing":
