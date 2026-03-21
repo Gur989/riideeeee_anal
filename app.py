@@ -172,20 +172,31 @@ if page == "Timing Analysis":
     col4.plotly_chart(fig4, use_container_width=True)
 
 # ---------------- PAGE 2 ----------------
-# ---------------- PAGE 2 ----------------
 elif page == "Weather Impact":
 
-    st.subheader("🌦 Weather vs Ride Pricing")
+    st.subheader("🌦 Weather Impact on Pricing")
 
+    # -------- KPI --------
     col1,col2,col3,col4,col5 = st.columns(5)
 
-    col1.metric("Clear Price",round(df[df["short_summary"]=="Clear"]["price"].mean(),2))
-    col2.metric("Rain Price",round(df[df["short_summary"].str.contains("Rain")]["price"].mean(),2))
-    col3.metric("Fog Price",round(df[df["short_summary"].str.contains("Fog")]["price"].mean(),2))
-    col4.metric("Avg Temp",round(df["temperature"].mean(),2))
-    col5.metric("Rain Surge",round(df[df["short_summary"].str.contains("Rain")]["surge_multiplier"].mean(),2))
+    col1.metric("Clear Weather Price",
+                round(df[df["short_summary"]=="Clear"]["price"].mean(),2))
 
-    # -------- ROW 1 --------
+    col2.metric("Rainy Weather Price",
+                round(df[df["short_summary"].str.contains("Rain")]["price"].mean(),2))
+
+    col3.metric("Foggy Weather Price",
+                round(df[df["short_summary"].str.contains("Fog")]["price"].mean(),2))
+
+    col4.metric("Average Temperature",
+                round(df["temperature"].mean(),2))
+
+    col5.metric("Rain Surge Rate",
+                round(df[df["short_summary"].str.contains("Rain")]["surge_multiplier"].mean(),2))
+
+    st.markdown("---")
+
+    # -------- CHARTS (ROW 1) --------
     col1, col2 = st.columns(2)
 
     # 1️⃣ Avg Price by Weather
@@ -195,34 +206,32 @@ elif page == "Weather Impact":
         y="price",
         title="Average Price by Weather"
     )
-    fig1.update_traces(marker_color="#1D4ED8")
+    fig1.update_traces(marker_color="#1D4ED8")  # BLUE
 
     col1.plotly_chart(fig1, use_container_width=True)
 
-    # 2️⃣ Price vs Temperature (FIXED INDENT)
+    # 2️⃣ Price vs Temperature
     fig2 = px.scatter(
         df,
         x="temperature",
         y="price",
-        title="Price vs Temperature (with Trend)",
-        opacity=0.5,
-        trendline="ols"
+        title="Price vs Temperature"
     )
-    fig2.update_traces(marker_color="#374151")
+    fig2.update_traces(marker_color="#374151")  # DARK GRAY
 
     col2.plotly_chart(fig2, use_container_width=True)
 
-    # -------- ROW 2 --------
+    # -------- CHARTS (ROW 2) --------
     col3, col4 = st.columns(2)
 
-    # 3️⃣ Price vs Visibility (BOX)
-    fig3 = px.box(
+    # 3️⃣ Price vs Visibility
+    fig3 = px.scatter(
         df,
-        x=pd.cut(df["visibility"], bins=5),
+        x="visibility",
         y="price",
-        title="Price Distribution by Visibility Levels"
+        title="Price vs Visibility"
     )
-    fig3.update_traces(marker_color="#1D4ED8")
+    fig3.update_traces(marker_color="#374151")
 
     col3.plotly_chart(fig3, use_container_width=True)
 
