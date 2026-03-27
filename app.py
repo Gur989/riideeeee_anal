@@ -13,17 +13,9 @@ st.set_page_config(page_title="Rides Analytics", layout="wide")
 # ---------------- LIGHT THEME STYLE ----------------
 st.markdown("""
 <style>
+.main { background-color:#F5F7FA; }
+h1,h2,h3,h4,label { color:#1F2937; }
 
-.main {
-    background-color:#F5F7FA;
-}
-
-/* Text */
-h1,h2,h3,h4,label {
-    color:#1F2937;
-}
-
-/* KPI Cards */
 div[data-testid="metric-container"]{
     background-color:#FFFFFF;
     border-radius:12px;
@@ -32,18 +24,15 @@ div[data-testid="metric-container"]{
     color:#111827;
 }
 
-/* Sidebar LIGHT */
 section[data-testid="stSidebar"]{
     background-color:#FFFFFF;
     border-right:1px solid #E5E7EB;
 }
 
-/* Sidebar text */
 section[data-testid="stSidebar"] label,
 section[data-testid="stSidebar"] span {
     color:#111827 !important;
 }
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -112,9 +101,11 @@ df = df[(df["month"].isin(month)) & (df["cab_type"].isin(cab))]
 
 # ---------------- PAGE 1 ----------------
 if page == "Timing Analysis":
+
     st.subheader("⏱ Ride Pricing by Time")
 
     col1,col2,col3,col4 = st.columns(4)
+
     col1.metric("Total Rides", len(df))
     col2.metric("Avg Price", round(df["price"].mean(),2))
     col3.metric("Avg Surge", round(df["surge_multiplier"].mean(),2))
@@ -122,16 +113,39 @@ if page == "Timing Analysis":
 
     col1,col2 = st.columns(2)
 
-    fig1 = px.line(df.groupby("hour")["price"].mean().reset_index(),
-                   x="hour", y="price", markers=True)
+    fig1 = px.line(
+        df.groupby("hour")["price"].mean().reset_index(),
+        x="hour", y="price", title="Average Price in Each Hour", markers=True
+    )
+    fig1.update_traces(line_color="#1D4ED8")
     col1.plotly_chart(fig1, use_container_width=True)
 
-    fig2 = px.line(df.groupby("hour").size().reset_index(name="rides"),
-                   x="hour", y="rides", markers=True)
+    fig2 = px.line(
+        df.groupby("hour").size().reset_index(name="rides"),
+        x="hour", y="rides", title="Ride Count Per Hour", markers=True
+    )
+    fig2.update_traces(line_color="#374151")
     col2.plotly_chart(fig2, use_container_width=True)
+
+    col3, col4 = st.columns(2)
+
+    fig3 = px.bar(
+        df.groupby("hour")["surge_multiplier"].mean().reset_index(),
+        x="hour", y="surge_multiplier", title="Average Surge in Each Hour"
+    )
+    fig3.update_traces(marker_color="#1D4ED8")
+    col3.plotly_chart(fig3, use_container_width=True)
+
+    fig4 = px.bar(
+        df.groupby("hour")["visibility"].mean().reset_index(),
+        x="hour", y="visibility", title="Average Visibility in Each Hour"
+    )
+    fig4.update_traces(marker_color="#374151")
+    col4.plotly_chart(fig4, use_container_width=True)
 
 # ---------------- PAGE 2 ----------------
 elif page == "Weather Impact":
+
     st.subheader("🌦 Weather Impact on Pricing")
 
     col1,col2,col3,col4,col5 = st.columns(5)
@@ -142,8 +156,33 @@ elif page == "Weather Impact":
     col4.metric("Average Temperature", round(df["temperature"].mean(),2))
     col5.metric("Rain Surge Rate", round(df[df["short_summary"].str.contains("Rain")]["surge_multiplier"].mean(),2))
 
+    st.markdown("---")
+
+    col1, col2 = st.columns(2)
+
+    fig1 = px.bar(df.groupby("short_summary")["price"].mean().reset_index(),
+                  x="short_summary", y="price", title="Average Price by Weather")
+    fig1.update_traces(marker_color="#1D4ED8")
+    col1.plotly_chart(fig1, use_container_width=True)
+
+    fig2 = px.scatter(df, x="temperature", y="price", title="Price vs Temperature")
+    fig2.update_traces(marker_color="#374151")
+    col2.plotly_chart(fig2, use_container_width=True)
+
+    col3, col4 = st.columns(2)
+
+    fig3 = px.scatter(df, x="visibility", y="price", title="Price vs Visibility")
+    fig3.update_traces(marker_color="#374151")
+    col3.plotly_chart(fig3, use_container_width=True)
+
+    fig4 = px.bar(df.groupby("short_summary")["surge_multiplier"].mean().reset_index(),
+                  x="short_summary", y="surge_multiplier", title="Surge % by Weather")
+    fig4.update_traces(marker_color="#1D4ED8")
+    col4.plotly_chart(fig4, use_container_width=True)
+
 # ---------------- PAGE 3 ----------------
 elif page == "Surge Pricing":
+
     st.subheader("⚡ Surge Pricing and Routes")
 
     col1,col2,col3,col4,col5,col6 = st.columns(6)
@@ -154,6 +193,18 @@ elif page == "Surge Pricing":
     col4.metric("Average Wind Speed", round(df["windSpeed"].mean(),2))
     col5.metric("Average Visibility", round(df["visibility"].mean(),2))
     col6.metric("Total Routes", df["source"].nunique())
+
+    st.markdown("---")
+
+    col1, col2 = st.columns(2)
+
+    fig1 = px.line(df.groupby("hour")["surge_multiplier"].mean().reset_index(),
+                   x="hour", y="surge_multiplier", markers=True)
+    col1.plotly_chart(fig1, use_container_width=True)
+
+    fig2 = px.bar(df[df["surge_multiplier"]>1].groupby("hour").size().reset_index(name="rides"),
+                  x="hour", y="rides")
+    col2.plotly_chart(fig2, use_container_width=True)
 
 # ---------------- PAGE 4 ----------------
 elif page == "Prediction":
@@ -176,7 +227,7 @@ elif page == "Prediction":
         cab = st.selectbox("Cab Type",df["cab_type"].unique())
         weather = st.selectbox("Weather",df["short_summary"].unique())
 
-    # -------- MODEL ADDITION (ONLY CHANGE) --------
+    # -------- MODELS --------
     features = ["distance","hour","temperature","humidity","windSpeed","visibility"]
     X = df_pred[features]
     y = df_pred["Actual_Price"]
@@ -201,12 +252,12 @@ elif page == "Prediction":
         rf_pred = round(rf_model.predict(input_data)[0],2)
         lr_pred = round(lr_model.predict(input_data)[0],2)
 
-        rf_r2 = r2_score(y, rf_model.predict(X))
+        r2 = r2_score(y, rf_model.predict(X))
 
         col1,col2 = st.columns(2)
         col1.metric("Random Forest Price", f"${rf_pred}")
         col2.metric("Linear Regression Price", f"${lr_pred}")
 
-        st.metric("Model Confidence (RF)", f"{round(rf_r2*100,2)}%")
+        st.metric("Model Confidence", f"{round(r2*100,2)}%")
 
         st.success("Prediction Generated Successfully")
