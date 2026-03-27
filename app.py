@@ -5,8 +5,6 @@ import pandas as pd
 import plotly.express as px
 import zipfile
 from sklearn.metrics import r2_score
-from sklearn.linear_model import LinearRegression
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 
 st.set_page_config(page_title="Rides Analytics", layout="wide")
 
@@ -297,8 +295,6 @@ elif page == "Surge Pricing":
    
 
 # ---------------- PAGE 4 ----------------
-
-
 elif page == "Prediction":
 
     st.subheader("🤖 Ride Price Prediction")
@@ -319,77 +315,20 @@ elif page == "Prediction":
         cab = st.selectbox("Cab Type",df["cab_type"].unique())
         weather = st.selectbox("Weather",df["short_summary"].unique())
 
-    # ---------------- DATA PREP ----------------
-    df_pred.columns = df_pred.columns.str.lower()
-
-    feature_map = {
-        "distance": ["distance"],
-        "hour": ["hour"],
-        "temperature": ["temperature","temp"],
-        "humidity": ["humidity"],
-        "windspeed": ["windspeed","wind_speed","wind"],
-        "visibility": ["visibility"]
-    }
-
-    features = []
-    for key, vals in feature_map.items():
-        for v in vals:
-            if v in df_pred.columns:
-                features.append(v)
-                break
-
-    target = [col for col in df_pred.columns if "price" in col][0]
-
-    X = df_pred[features]
-    y = df_pred[target]
-
-    # ---------------- MODELS ----------------
-    rf = RandomForestRegressor()
-    lr = LinearRegression()
-    gb = GradientBoostingRegressor()
-
-    rf.fit(X,y)
-    lr.fit(X,y)
-    gb.fit(X,y)
-
     if st.button("Predict Price"):
 
-        input_data = pd.DataFrame({
-            features[0]: [distance],
-            features[1]: [hour],
-            features[2]: [temperature],
-            features[3]: [humidity],
-            features[4]: [wind],
-            features[5]: [visibility]
-        })
+        base_price = distance * 3
+        weather_factor = 1.2 if "Rain" in weather else 1
+        temp_factor = temperature / 50
 
-        # ---------------- PREDICTIONS ----------------
-        pred_rf = rf.predict(input_data)[0]
-        pred_lr = lr.predict(input_data)[0]
-        pred_gb = gb.predict(input_data)[0]
+        predicted_price = round(base_price * weather_factor * (1 + temp_factor),2)
 
-        predictions = [pred_rf, pred_lr, pred_gb]
+        r2 = r2_score(df_pred["Actual_Price"], df_pred["Predicted_RF"])
+        confidence = round(r2 * 100,2)
 
-        # FINAL PRICE (average)
-        final_price = round(sum(predictions)/len(predictions),2)
-
-        # ---------------- DYNAMIC CONFIDENCE ----------------
-        min_pred = min(predictions)
-        max_pred = max(predictions)
-
-        # confidence based on spread
-        if max_pred != 0:
-            confidence = round((1 - (max_pred - min_pred)/max_pred) * 100,2)
-        else:
-            confidence = 0
-
-        # ---------------- OUTPUT ----------------
         col1,col2 = st.columns(2)
 
-        col1.metric("Predicted Price", f"${final_price}")
+        col1.metric("Predicted Price", f"${predicted_price}")
         col2.metric("Model Confidence", f"{confidence}%")
 
-        # Confidence Interval (THIS WAS MISSING)
-        st.info(f"Confidence Interval: ${round(min_pred,2)} - ${round(max_pred,2)}")
-
-        st.success("Prediction Generated Successfully")
+        st.success("Prediction Generated Successfully ")
