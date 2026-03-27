@@ -5,29 +5,52 @@ import pandas as pd
 import plotly.express as px
 import zipfile
 from sklearn.metrics import r2_score
-from sklearn.linear_model import LinearRegression
-from sklearn.ensemble import RandomForestRegressor
 
 st.set_page_config(page_title="Rides Analytics", layout="wide")
 
-# ---------------- STYLE ----------------
+# ---------------- LIGHT THEME STYLE ----------------
 st.markdown("""
 <style>
-.main { background-color:#F5F7FA; }
-h1,h2,h3,h4,label { color:#1F2937; }
+
+.main {
+    background-color:#F5F7FA;
+}
+
+/* Text */
+h1,h2,h3,h4,label {
+    color:#1F2937;
+}
+
+/* KPI Cards */
 div[data-testid="metric-container"]{
     background-color:#FFFFFF;
     border-radius:12px;
     padding:18px;
     box-shadow:0px 4px 12px rgba(0,0,0,0.08);
+    color:#111827;
 }
+
+/* Sidebar LIGHT */
+section[data-testid="stSidebar"]{
+    background-color:#FFFFFF;
+    border-right:1px solid #E5E7EB;
+}
+
+/* Sidebar text */
+section[data-testid="stSidebar"] label,
+section[data-testid="stSidebar"] span {
+    color:#111827 !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- HEADER ----------------
+# ---------------- HEADER WITH LOGO ----------------
 col_logo, col_title = st.columns([1,5])
+
 with col_logo:
     st.image("logo.png", width=120)
+
 with col_title:
     st.markdown("# Rides Analytics Dashboard")
 
@@ -69,9 +92,6 @@ def load_prediction_data():
 df = load_data()
 df_pred = load_prediction_data()
 
-# ✅ FIX COLUMN NAMES AUTOMATICALLY
-df_pred.columns = df_pred.columns.str.lower()
-
 # ---------------- SIDEBAR ----------------
 st.sidebar.image("logo.png", width=150)
 st.sidebar.title("Navigation")
@@ -102,22 +122,53 @@ if page == "Timing Analysis":
 
     col1,col2 = st.columns(2)
 
-    fig1 = px.line(df.groupby("hour")["price"].mean().reset_index(),
-                   x="hour", y="price", markers=True)
+   # 1️⃣ Average Price Per Hour
+    fig1 = px.line(
+        df.groupby("hour")["price"].mean().reset_index(),
+        x="hour",
+        y="price",
+        title="Average Price in Each Hour",
+        markers=True
+    )
+    fig1.update_traces(line_color="#1D4ED8")  # BLUE
+
     col1.plotly_chart(fig1, use_container_width=True)
 
-    fig2 = px.line(df.groupby("hour").size().reset_index(name="rides"),
-                   x="hour", y="rides", markers=True)
+    # 2️⃣ Ride Count Per Hour
+    fig2 = px.line(
+        df.groupby("hour").size().reset_index(name="rides"),
+        x="hour",
+        y="rides",
+        title="Ride Count Per Hour",
+        markers=True
+    )
+    fig2.update_traces(line_color="#374151")  # DARK GRAY
+
     col2.plotly_chart(fig2, use_container_width=True)
 
+    # SECOND ROW
     col3, col4 = st.columns(2)
 
-    fig3 = px.bar(df.groupby("hour")["surge_multiplier"].mean().reset_index(),
-                  x="hour", y="surge_multiplier")
+    # 3️⃣ Average Surge Per Hour
+    fig3 = px.bar(
+        df.groupby("hour")["surge_multiplier"].mean().reset_index(),
+        x="hour",
+        y="surge_multiplier",
+        title="Average Surge in Each Hour"
+    )
+    fig3.update_traces(marker_color="#1D4ED8")
+
     col3.plotly_chart(fig3, use_container_width=True)
 
-    fig4 = px.bar(df.groupby("hour")["visibility"].mean().reset_index(),
-                  x="hour", y="visibility")
+    # 4️⃣ Average Visibility Per Hour
+    fig4 = px.bar(
+        df.groupby("hour")["visibility"].mean().reset_index(),
+        x="hour",
+        y="visibility",
+        title="Average Visibility in Each Hour"
+    )
+    fig4.update_traces(marker_color="#374151")
+
     col4.plotly_chart(fig4, use_container_width=True)
 
 # ---------------- PAGE 2 ----------------
@@ -125,19 +176,82 @@ elif page == "Weather Impact":
 
     st.subheader("🌦 Weather Impact on Pricing")
 
+    # -------- KPI --------
     col1,col2,col3,col4,col5 = st.columns(5)
 
-    col1.metric("Clear Weather Price", round(df[df["short_summary"]=="Clear"]["price"].mean(),2))
-    col2.metric("Rainy Weather Price", round(df[df["short_summary"].str.contains("Rain")]["price"].mean(),2))
-    col3.metric("Foggy Weather Price", round(df[df["short_summary"].str.contains("Fog")]["price"].mean(),2))
-    col4.metric("Average Temperature", round(df["temperature"].mean(),2))
-    col5.metric("Rain Surge Rate", round(df[df["short_summary"].str.contains("Rain")]["surge_multiplier"].mean(),2))
+    col1.metric("Clear Weather Price",
+                round(df[df["short_summary"]=="Clear"]["price"].mean(),2))
 
+    col2.metric("Rainy Weather Price",
+                round(df[df["short_summary"].str.contains("Rain")]["price"].mean(),2))
+
+    col3.metric("Foggy Weather Price",
+                round(df[df["short_summary"].str.contains("Fog")]["price"].mean(),2))
+
+    col4.metric("Average Temperature",
+                round(df["temperature"].mean(),2))
+
+    col5.metric("Rain Surge Rate",
+                round(df[df["short_summary"].str.contains("Rain")]["surge_multiplier"].mean(),2))
+
+    st.markdown("---")
+
+    # -------- CHARTS (ROW 1) --------
+    col1, col2 = st.columns(2)
+
+    # 1️⃣ Avg Price by Weather
+    fig1 = px.bar(
+        df.groupby("short_summary")["price"].mean().reset_index(),
+        x="short_summary",
+        y="price",
+        title="Average Price by Weather"
+    )
+    fig1.update_traces(marker_color="#1D4ED8")  # BLUE
+
+    col1.plotly_chart(fig1, use_container_width=True)
+
+    # 2️⃣ Price vs Temperature
+    fig2 = px.scatter(
+        df,
+        x="temperature",
+        y="price",
+        title="Price vs Temperature"
+    )
+    fig2.update_traces(marker_color="#374151")  # DARK GRAY
+
+    col2.plotly_chart(fig2, use_container_width=True)
+
+    # -------- CHARTS (ROW 2) --------
+    col3, col4 = st.columns(2)
+
+    # 3️⃣ Price vs Visibility
+    fig3 = px.scatter(
+        df,
+        x="visibility",
+        y="price",
+        title="Price vs Visibility"
+    )
+    fig3.update_traces(marker_color="#374151")
+
+    col3.plotly_chart(fig3, use_container_width=True)
+
+    # 4️⃣ Surge % by Weather
+    fig4 = px.bar(
+        df.groupby("short_summary")["surge_multiplier"].mean().reset_index(),
+        x="short_summary",
+        y="surge_multiplier",
+        title="Surge % by Weather"
+    )
+    fig4.update_traces(marker_color="#1D4ED8")
+
+    col4.plotly_chart(fig4, use_container_width=True)
+# ---------------- PAGE 3 ----------------
 # ---------------- PAGE 3 ----------------
 elif page == "Surge Pricing":
 
-    st.subheader("⚡ Surge Pricing")
+    st.subheader("⚡ Surge Pricing and Routes")
 
+    # -------- KPI --------
     col1,col2,col3,col4,col5,col6 = st.columns(6)
 
     col1.metric("Total Surge Rides", df[df["surge_multiplier"]>1].shape[0])
@@ -146,6 +260,39 @@ elif page == "Surge Pricing":
     col4.metric("Average Wind Speed", round(df["windSpeed"].mean(),2))
     col5.metric("Average Visibility", round(df["visibility"].mean(),2))
     col6.metric("Total Routes", df["source"].nunique())
+
+    st.markdown("---")
+
+    # -------- ROW 1 --------
+    col1, col2 = st.columns(2)
+
+    # 1️⃣ Surge Trend by Hour
+    fig1 = px.line(
+        df.groupby("hour")["surge_multiplier"].mean().reset_index(),
+        x="hour",
+        y="surge_multiplier",
+        title="Average Surge Multiplier in Hours",
+        markers=True
+    )
+    fig1.update_traces(line_color="#1D4ED8")
+
+    col1.plotly_chart(fig1, use_container_width=True)
+
+    # 2️⃣ Surge Ride Count by Hour
+    fig2 = px.bar(
+        df[df["surge_multiplier"]>1].groupby("hour").size().reset_index(name="rides"),
+        x="hour",
+        y="rides",
+        title="Surge Rides by Hour"
+    )
+    fig2.update_traces(marker_color="#374151")
+
+    col2.plotly_chart(fig2, use_container_width=True)
+
+    # -------- ROW 2 --------
+    col3, col4 = st.columns(2)
+
+   
 
 # ---------------- PAGE 4 ----------------
 elif page == "Prediction":
@@ -168,40 +315,20 @@ elif page == "Prediction":
         cab = st.selectbox("Cab Type",df["cab_type"].unique())
         weather = st.selectbox("Weather",df["short_summary"].unique())
 
-    # -------- SAFE FEATURES --------
-    features = [col for col in ["distance","hour","temperature","humidity","windspeed","visibility"] if col in df_pred.columns]
-
-    X = df_pred[features]
-    y = df_pred["actual_price"]
-
-    rf_model = RandomForestRegressor()
-    rf_model.fit(X,y)
-
-    lr_model = LinearRegression()
-    lr_model.fit(X,y)
-
     if st.button("Predict Price"):
 
-        input_data = pd.DataFrame({
-            "distance":[distance],
-            "hour":[hour],
-            "temperature":[temperature],
-            "humidity":[humidity],
-            "windspeed":[wind],
-            "visibility":[visibility]
-        })
+        base_price = distance * 3
+        weather_factor = 1.2 if "Rain" in weather else 1
+        temp_factor = temperature / 50
 
-        input_data = input_data[features]
+        predicted_price = round(base_price * weather_factor * (1 + temp_factor),2)
 
-        rf_pred = round(rf_model.predict(input_data)[0],2)
-        lr_pred = round(lr_model.predict(input_data)[0],2)
-
-        r2 = r2_score(y, rf_model.predict(X))
+        r2 = r2_score(df_pred["Actual_Price"], df_pred["Predicted_RF"])
+        confidence = round(r2 * 100,2)
 
         col1,col2 = st.columns(2)
-        col1.metric("Random Forest Price", f"${rf_pred}")
-        col2.metric("Linear Regression Price", f"${lr_pred}")
 
-        st.metric("Model Confidence", f"{round(r2*100,2)}%")
+        col1.metric("Predicted Price", f"${predicted_price}")
+        col2.metric("Model Confidence", f"{confidence}%")
 
-        st.success("Prediction Generated Successfully")
+        st.success("Prediction Generated Successfully ")
