@@ -10,38 +10,24 @@ from sklearn.ensemble import RandomForestRegressor
 
 st.set_page_config(page_title="Rides Analytics", layout="wide")
 
-# ---------------- LIGHT THEME STYLE ----------------
+# ---------------- STYLE ----------------
 st.markdown("""
 <style>
 .main { background-color:#F5F7FA; }
 h1,h2,h3,h4,label { color:#1F2937; }
-
 div[data-testid="metric-container"]{
     background-color:#FFFFFF;
     border-radius:12px;
     padding:18px;
     box-shadow:0px 4px 12px rgba(0,0,0,0.08);
-    color:#111827;
-}
-
-section[data-testid="stSidebar"]{
-    background-color:#FFFFFF;
-    border-right:1px solid #E5E7EB;
-}
-
-section[data-testid="stSidebar"] label,
-section[data-testid="stSidebar"] span {
-    color:#111827 !important;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- HEADER WITH LOGO ----------------
+# ---------------- HEADER ----------------
 col_logo, col_title = st.columns([1,5])
-
 with col_logo:
     st.image("logo.png", width=120)
-
 with col_title:
     st.markdown("# Rides Analytics Dashboard")
 
@@ -83,6 +69,9 @@ def load_prediction_data():
 df = load_data()
 df_pred = load_prediction_data()
 
+# ✅ FIX COLUMN NAMES AUTOMATICALLY
+df_pred.columns = df_pred.columns.str.lower()
+
 # ---------------- SIDEBAR ----------------
 st.sidebar.image("logo.png", width=150)
 st.sidebar.title("Navigation")
@@ -113,34 +102,22 @@ if page == "Timing Analysis":
 
     col1,col2 = st.columns(2)
 
-    fig1 = px.line(
-        df.groupby("hour")["price"].mean().reset_index(),
-        x="hour", y="price", title="Average Price in Each Hour", markers=True
-    )
-    fig1.update_traces(line_color="#1D4ED8")
+    fig1 = px.line(df.groupby("hour")["price"].mean().reset_index(),
+                   x="hour", y="price", markers=True)
     col1.plotly_chart(fig1, use_container_width=True)
 
-    fig2 = px.line(
-        df.groupby("hour").size().reset_index(name="rides"),
-        x="hour", y="rides", title="Ride Count Per Hour", markers=True
-    )
-    fig2.update_traces(line_color="#374151")
+    fig2 = px.line(df.groupby("hour").size().reset_index(name="rides"),
+                   x="hour", y="rides", markers=True)
     col2.plotly_chart(fig2, use_container_width=True)
 
     col3, col4 = st.columns(2)
 
-    fig3 = px.bar(
-        df.groupby("hour")["surge_multiplier"].mean().reset_index(),
-        x="hour", y="surge_multiplier", title="Average Surge in Each Hour"
-    )
-    fig3.update_traces(marker_color="#1D4ED8")
+    fig3 = px.bar(df.groupby("hour")["surge_multiplier"].mean().reset_index(),
+                  x="hour", y="surge_multiplier")
     col3.plotly_chart(fig3, use_container_width=True)
 
-    fig4 = px.bar(
-        df.groupby("hour")["visibility"].mean().reset_index(),
-        x="hour", y="visibility", title="Average Visibility in Each Hour"
-    )
-    fig4.update_traces(marker_color="#374151")
+    fig4 = px.bar(df.groupby("hour")["visibility"].mean().reset_index(),
+                  x="hour", y="visibility")
     col4.plotly_chart(fig4, use_container_width=True)
 
 # ---------------- PAGE 2 ----------------
@@ -156,34 +133,10 @@ elif page == "Weather Impact":
     col4.metric("Average Temperature", round(df["temperature"].mean(),2))
     col5.metric("Rain Surge Rate", round(df[df["short_summary"].str.contains("Rain")]["surge_multiplier"].mean(),2))
 
-    st.markdown("---")
-
-    col1, col2 = st.columns(2)
-
-    fig1 = px.bar(df.groupby("short_summary")["price"].mean().reset_index(),
-                  x="short_summary", y="price", title="Average Price by Weather")
-    fig1.update_traces(marker_color="#1D4ED8")
-    col1.plotly_chart(fig1, use_container_width=True)
-
-    fig2 = px.scatter(df, x="temperature", y="price", title="Price vs Temperature")
-    fig2.update_traces(marker_color="#374151")
-    col2.plotly_chart(fig2, use_container_width=True)
-
-    col3, col4 = st.columns(2)
-
-    fig3 = px.scatter(df, x="visibility", y="price", title="Price vs Visibility")
-    fig3.update_traces(marker_color="#374151")
-    col3.plotly_chart(fig3, use_container_width=True)
-
-    fig4 = px.bar(df.groupby("short_summary")["surge_multiplier"].mean().reset_index(),
-                  x="short_summary", y="surge_multiplier", title="Surge % by Weather")
-    fig4.update_traces(marker_color="#1D4ED8")
-    col4.plotly_chart(fig4, use_container_width=True)
-
 # ---------------- PAGE 3 ----------------
 elif page == "Surge Pricing":
 
-    st.subheader("⚡ Surge Pricing and Routes")
+    st.subheader("⚡ Surge Pricing")
 
     col1,col2,col3,col4,col5,col6 = st.columns(6)
 
@@ -193,18 +146,6 @@ elif page == "Surge Pricing":
     col4.metric("Average Wind Speed", round(df["windSpeed"].mean(),2))
     col5.metric("Average Visibility", round(df["visibility"].mean(),2))
     col6.metric("Total Routes", df["source"].nunique())
-
-    st.markdown("---")
-
-    col1, col2 = st.columns(2)
-
-    fig1 = px.line(df.groupby("hour")["surge_multiplier"].mean().reset_index(),
-                   x="hour", y="surge_multiplier", markers=True)
-    col1.plotly_chart(fig1, use_container_width=True)
-
-    fig2 = px.bar(df[df["surge_multiplier"]>1].groupby("hour").size().reset_index(name="rides"),
-                  x="hour", y="rides")
-    col2.plotly_chart(fig2, use_container_width=True)
 
 # ---------------- PAGE 4 ----------------
 elif page == "Prediction":
@@ -227,10 +168,11 @@ elif page == "Prediction":
         cab = st.selectbox("Cab Type",df["cab_type"].unique())
         weather = st.selectbox("Weather",df["short_summary"].unique())
 
-    # -------- MODELS --------
-    features = ["distance","hour","temperature","humidity","windSpeed","visibility"]
+    # -------- SAFE FEATURES --------
+    features = [col for col in ["distance","hour","temperature","humidity","windspeed","visibility"] if col in df_pred.columns]
+
     X = df_pred[features]
-    y = df_pred["Actual_Price"]
+    y = df_pred["actual_price"]
 
     rf_model = RandomForestRegressor()
     rf_model.fit(X,y)
@@ -245,9 +187,11 @@ elif page == "Prediction":
             "hour":[hour],
             "temperature":[temperature],
             "humidity":[humidity],
-            "windSpeed":[wind],
+            "windspeed":[wind],
             "visibility":[visibility]
         })
+
+        input_data = input_data[features]
 
         rf_pred = round(rf_model.predict(input_data)[0],2)
         lr_pred = round(lr_model.predict(input_data)[0],2)
