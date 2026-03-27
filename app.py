@@ -10,28 +10,16 @@ from sklearn.ensemble import RandomForestRegressor
 
 st.set_page_config(page_title="Rides Analytics", layout="wide")
 
-# ---------------- LIGHT THEME STYLE ----------------
+# ---------------- STYLE ----------------
 st.markdown("""
 <style>
 .main { background-color:#F5F7FA; }
 h1,h2,h3,h4,label { color:#1F2937; }
-
 div[data-testid="metric-container"]{
     background-color:#FFFFFF;
     border-radius:12px;
     padding:18px;
     box-shadow:0px 4px 12px rgba(0,0,0,0.08);
-    color:#111827;
-}
-
-section[data-testid="stSidebar"]{
-    background-color:#FFFFFF;
-    border-right:1px solid #E5E7EB;
-}
-
-section[data-testid="stSidebar"] label,
-section[data-testid="stSidebar"] span {
-    color:#111827 !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -82,7 +70,6 @@ df = load_data()
 df_pred = load_prediction_data()
 
 # ---------------- SIDEBAR ----------------
-st.sidebar.image("logo.png", width=150)
 st.sidebar.title("Navigation")
 
 page = st.sidebar.radio(
@@ -90,15 +77,29 @@ page = st.sidebar.radio(
     ["Timing Analysis","Weather Impact","Surge Pricing","Prediction"]
 )
 
-st.sidebar.title("Filters")
+# ---------------- PAGE 1 ----------------
+if page == "Timing Analysis":
+    st.subheader("⏱ Ride Pricing by Time")
 
-month = st.sidebar.multiselect("Month", df["month"].unique(), df["month"].unique())
-cab = st.sidebar.multiselect("Cab Type", df["cab_type"].unique(), df["cab_type"].unique())
+    fig = px.line(df.groupby("hour")["price"].mean().reset_index(),
+                  x="hour", y="price", title="Avg Price per Hour")
+    st.plotly_chart(fig, use_container_width=True)
 
-df = df[(df["month"].isin(month)) & (df["cab_type"].isin(cab))]
+# ---------------- PAGE 2 ----------------
+elif page == "Weather Impact":
+    st.subheader("🌦 Weather Impact")
 
-# ---------------- (ALL OTHER PAGES SAME - NO CHANGE) ----------------
-# 👉 I skipped repeating them here since NO CHANGE required
+    fig = px.bar(df.groupby("short_summary")["price"].mean().reset_index(),
+                 x="short_summary", y="price")
+    st.plotly_chart(fig, use_container_width=True)
+
+# ---------------- PAGE 3 ----------------
+elif page == "Surge Pricing":
+    st.subheader("⚡ Surge Pricing")
+
+    fig = px.line(df.groupby("hour")["surge_multiplier"].mean().reset_index(),
+                  x="hour", y="surge_multiplier")
+    st.plotly_chart(fig, use_container_width=True)
 
 # ---------------- PAGE 4 ----------------
 elif page == "Prediction":
@@ -121,9 +122,8 @@ elif page == "Prediction":
         cab = st.selectbox("Cab Type",df["cab_type"].unique())
         weather = st.selectbox("Weather",df["short_summary"].unique())
 
-    # -------- MODEL TRAINING --------
+    # -------- MODEL --------
     features = ["distance","hour","temperature","humidity","windSpeed","visibility"]
-    
     X = df_pred[features]
     y = df_pred["Actual_Price"]
 
@@ -144,22 +144,15 @@ elif page == "Prediction":
             "visibility":[visibility]
         })
 
-        # -------- PREDICTIONS --------
         rf_pred = round(rf_model.predict(input_data)[0],2)
         lr_pred = round(lr_model.predict(input_data)[0],2)
 
-        # -------- ACCURACY --------
         rf_r2 = r2_score(y, rf_model.predict(X))
-        lr_r2 = r2_score(y, lr_model.predict(X))
 
-        # -------- OUTPUT (SAME STYLE) --------
         col1,col2 = st.columns(2)
-
         col1.metric("Random Forest Price", f"${rf_pred}")
         col2.metric("Linear Regression Price", f"${lr_pred}")
 
-        # Keep original confidence (RF)
-        confidence = round(rf_r2 * 100,2)
-        st.metric("Model Confidence (RF)", f"{confidence}%")
+        st.metric("Model Confidence (RF)", f"{round(rf_r2*100,2)}%")
 
-        st.success("Prediction Generated Successfully ")
+        st.success("Prediction Generated Successfully")
