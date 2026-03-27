@@ -10,24 +10,49 @@ from sklearn.ensemble import RandomForestRegressor
 
 st.set_page_config(page_title="Rides Analytics", layout="wide")
 
-# ---------------- STYLE ----------------
+# ---------------- LIGHT THEME STYLE ----------------
 st.markdown("""
 <style>
-.main { background-color:#F5F7FA; }
-h1,h2,h3,h4,label { color:#1F2937; }
+
+.main {
+    background-color:#F5F7FA;
+}
+
+/* Text */
+h1,h2,h3,h4,label {
+    color:#1F2937;
+}
+
+/* KPI Cards */
 div[data-testid="metric-container"]{
     background-color:#FFFFFF;
     border-radius:12px;
     padding:18px;
     box-shadow:0px 4px 12px rgba(0,0,0,0.08);
+    color:#111827;
 }
+
+/* Sidebar LIGHT */
+section[data-testid="stSidebar"]{
+    background-color:#FFFFFF;
+    border-right:1px solid #E5E7EB;
+}
+
+/* Sidebar text */
+section[data-testid="stSidebar"] label,
+section[data-testid="stSidebar"] span {
+    color:#111827 !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- HEADER ----------------
+# ---------------- HEADER WITH LOGO ----------------
 col_logo, col_title = st.columns([1,5])
+
 with col_logo:
     st.image("logo.png", width=120)
+
 with col_title:
     st.markdown("# Rides Analytics Dashboard")
 
@@ -70,6 +95,7 @@ df = load_data()
 df_pred = load_prediction_data()
 
 # ---------------- SIDEBAR ----------------
+st.sidebar.image("logo.png", width=150)
 st.sidebar.title("Navigation")
 
 page = st.sidebar.radio(
@@ -77,29 +103,57 @@ page = st.sidebar.radio(
     ["Timing Analysis","Weather Impact","Surge Pricing","Prediction"]
 )
 
+st.sidebar.title("Filters")
+
+month = st.sidebar.multiselect("Month", df["month"].unique(), df["month"].unique())
+cab = st.sidebar.multiselect("Cab Type", df["cab_type"].unique(), df["cab_type"].unique())
+
+df = df[(df["month"].isin(month)) & (df["cab_type"].isin(cab))]
+
 # ---------------- PAGE 1 ----------------
 if page == "Timing Analysis":
     st.subheader("⏱ Ride Pricing by Time")
 
-    fig = px.line(df.groupby("hour")["price"].mean().reset_index(),
-                  x="hour", y="price", title="Avg Price per Hour")
-    st.plotly_chart(fig, use_container_width=True)
+    col1,col2,col3,col4 = st.columns(4)
+    col1.metric("Total Rides", len(df))
+    col2.metric("Avg Price", round(df["price"].mean(),2))
+    col3.metric("Avg Surge", round(df["surge_multiplier"].mean(),2))
+    col4.metric("Avg Distance", round(df["distance"].mean(),2))
+
+    col1,col2 = st.columns(2)
+
+    fig1 = px.line(df.groupby("hour")["price"].mean().reset_index(),
+                   x="hour", y="price", markers=True)
+    col1.plotly_chart(fig1, use_container_width=True)
+
+    fig2 = px.line(df.groupby("hour").size().reset_index(name="rides"),
+                   x="hour", y="rides", markers=True)
+    col2.plotly_chart(fig2, use_container_width=True)
 
 # ---------------- PAGE 2 ----------------
 elif page == "Weather Impact":
-    st.subheader("🌦 Weather Impact")
+    st.subheader("🌦 Weather Impact on Pricing")
 
-    fig = px.bar(df.groupby("short_summary")["price"].mean().reset_index(),
-                 x="short_summary", y="price")
-    st.plotly_chart(fig, use_container_width=True)
+    col1,col2,col3,col4,col5 = st.columns(5)
+
+    col1.metric("Clear Weather Price", round(df[df["short_summary"]=="Clear"]["price"].mean(),2))
+    col2.metric("Rainy Weather Price", round(df[df["short_summary"].str.contains("Rain")]["price"].mean(),2))
+    col3.metric("Foggy Weather Price", round(df[df["short_summary"].str.contains("Fog")]["price"].mean(),2))
+    col4.metric("Average Temperature", round(df["temperature"].mean(),2))
+    col5.metric("Rain Surge Rate", round(df[df["short_summary"].str.contains("Rain")]["surge_multiplier"].mean(),2))
 
 # ---------------- PAGE 3 ----------------
 elif page == "Surge Pricing":
-    st.subheader("⚡ Surge Pricing")
+    st.subheader("⚡ Surge Pricing and Routes")
 
-    fig = px.line(df.groupby("hour")["surge_multiplier"].mean().reset_index(),
-                  x="hour", y="surge_multiplier")
-    st.plotly_chart(fig, use_container_width=True)
+    col1,col2,col3,col4,col5,col6 = st.columns(6)
+
+    col1.metric("Total Surge Rides", df[df["surge_multiplier"]>1].shape[0])
+    col2.metric("Average Surge Multiplier", round(df["surge_multiplier"].mean(),2))
+    col3.metric("Maximum Surge Multiplier", round(df["surge_multiplier"].max(),2))
+    col4.metric("Average Wind Speed", round(df["windSpeed"].mean(),2))
+    col5.metric("Average Visibility", round(df["visibility"].mean(),2))
+    col6.metric("Total Routes", df["source"].nunique())
 
 # ---------------- PAGE 4 ----------------
 elif page == "Prediction":
@@ -122,7 +176,7 @@ elif page == "Prediction":
         cab = st.selectbox("Cab Type",df["cab_type"].unique())
         weather = st.selectbox("Weather",df["short_summary"].unique())
 
-    # -------- MODEL --------
+    # -------- MODEL ADDITION (ONLY CHANGE) --------
     features = ["distance","hour","temperature","humidity","windSpeed","visibility"]
     X = df_pred[features]
     y = df_pred["Actual_Price"]
